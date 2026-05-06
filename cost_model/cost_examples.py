@@ -14,9 +14,7 @@ with open("./configs/prefilling_system.json", "r") as f:
 
 compute_area = cost_model.calc_compute_chiplet_area_mm2(configs_dict)
 io_area = cost_model.calc_io_die_area_mm2(configs_dict)
-print(
-    f"compute area: {compute_area}, io area: {io_area}, total area: {compute_area+io_area}"
-)
+print(f"compute area: {compute_area}, io area: {io_area}, total area: {compute_area + io_area}")
 
 exit(0)
 core_compute_area_mm2 = cost_model.calc_compute_core_area_mm2(

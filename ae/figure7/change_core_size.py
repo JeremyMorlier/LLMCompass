@@ -26,9 +26,7 @@ model_auto_regression = TransformerBlockAutoRegressionTP(
     device_count=device_count,
     data_type=data_type_dict["fp16"],
 )
-_ = model_init(
-    Tensor([batch_size, input_seq_length, model_init.d_model], data_type_dict["fp16"])
-)
+_ = model_init(Tensor([batch_size, input_seq_length, model_init.d_model], data_type_dict["fp16"]))
 _ = model_auto_regression(
     Tensor([batch_size, 1, model_init.d_model], data_type_dict["fp16"]),
     input_seq_length + output_seq_length,
@@ -39,53 +37,33 @@ def test_core_size(core_configs, lock):
     name, core_count, sublane_count, array_width, vector_width, sram_KB = core_configs
     arch_specs["device"]["compute_chiplet"]["core_count"] = core_count
     arch_specs["device"]["compute_chiplet"]["core"]["sublane_count"] = sublane_count
-    arch_specs["device"]["compute_chiplet"]["core"]["systolic_array"][
-        "array_width"
-    ] = array_width
-    arch_specs["device"]["compute_chiplet"]["core"]["systolic_array"][
-        "array_height"
-    ] = array_width
-    arch_specs["device"]["compute_chiplet"]["core"]["vector_unit"][
-        "vector_width"
-    ] = vector_width
+    arch_specs["device"]["compute_chiplet"]["core"]["systolic_array"]["array_width"] = array_width
+    arch_specs["device"]["compute_chiplet"]["core"]["systolic_array"]["array_height"] = array_width
+    arch_specs["device"]["compute_chiplet"]["core"]["vector_unit"]["vector_width"] = vector_width
     arch_specs["device"]["compute_chiplet"]["core"]["SRAM_KB"] = sram_KB
     # for area
     arch_specs["device"]["compute_chiplet"]["physical_core_count"] = core_count
-    arch_specs["device"]["compute_chiplet"]["core"]["vector_unit"]["int32_count"] = (
-        vector_width // 2
-    )
-    arch_specs["device"]["compute_chiplet"]["core"]["vector_unit"]["fp32_count"] = (
-        vector_width // 2
-    )
-    arch_specs["device"]["compute_chiplet"]["core"]["vector_unit"]["fp64_count"] = (
-        vector_width // 4
-    )
+    arch_specs["device"]["compute_chiplet"]["core"]["vector_unit"]["int32_count"] = vector_width // 2
+    arch_specs["device"]["compute_chiplet"]["core"]["vector_unit"]["fp32_count"] = vector_width // 2
+    arch_specs["device"]["compute_chiplet"]["core"]["vector_unit"]["fp64_count"] = vector_width // 4
     if vector_width <= 32:
-        arch_specs["device"]["compute_chiplet"]["core"]["register_file"][
-            "num_registers"
-        ] = (vector_width * 512)
+        arch_specs["device"]["compute_chiplet"]["core"]["register_file"]["num_registers"] = vector_width * 512
     else:
-        arch_specs["device"]["compute_chiplet"]["core"]["register_file"][
-            "num_reg_files"
-        ] = (vector_width // 32)
+        arch_specs["device"]["compute_chiplet"]["core"]["register_file"]["num_reg_files"] = vector_width // 32
     compute_area_mm2 = calc_compute_chiplet_area_mm2(arch_specs)
     io_area_mm2 = calc_io_die_area_mm2(arch_specs)
-    print(f"{name}, {compute_area_mm2}, {io_area_mm2}, {compute_area_mm2+io_area_mm2}")
+    print(f"{name}, {compute_area_mm2}, {io_area_mm2}, {compute_area_mm2 + io_area_mm2}")
     # exit()
     system = template_to_system(arch_specs)
-    auto_regression_latency_simulated = model_auto_regression.compile_and_simulate(
-        system, "heuristic-GPU"
-    )
+    auto_regression_latency_simulated = model_auto_regression.compile_and_simulate(system, "heuristic-GPU")
     init_latency_simulated = model_init.compile_and_simulate(system, "heuristic-GPU")
     print(f"{name}, {init_latency_simulated}, {auto_regression_latency_simulated}")
     with lock:
-        with open(f"ae/figure7/core_size_results_init.csv", "a") as f:
+        with open("ae/figure7/core_size_results_init.csv", "a") as f:
+            f.write(f"{name}, {compute_area_mm2 + io_area_mm2}, {init_latency_simulated}, {model_init.simluate_log}\n")
+        with open("ae/figure7/core_size_results_ar.csv", "a") as f:
             f.write(
-                f"{name}, {compute_area_mm2+io_area_mm2}, {init_latency_simulated}, {model_init.simluate_log}\n"
-            )
-        with open(f"ae/figure7/core_size_results_ar.csv", "a") as f:
-            f.write(
-                f"{name}, {compute_area_mm2+io_area_mm2}, {auto_regression_latency_simulated}, {model_auto_regression.simluate_log}\n"
+                f"{name}, {compute_area_mm2 + io_area_mm2}, {auto_regression_latency_simulated}, {model_auto_regression.simluate_log}\n"
             )
 
 

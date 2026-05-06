@@ -1,6 +1,5 @@
-from utils import size, closest_factors
-from typing import List, Tuple, Union
-from hardware_model.device import Device
+from utils import size
+from typing import List
 from software_model.utils import Tensor, DataType
 
 

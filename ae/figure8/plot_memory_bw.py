@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
-import csv
 import pandas as pd
 
 categories = [
@@ -74,7 +73,7 @@ xticks = plt.gca().get_xticks()
 xticklabels = plt.gca().get_xticklabels()
 index_to_color_red = list(xticks).index(5)
 xticklabels[index_to_color_red].set_color("red")
-plt.savefig(f"figure8a.pdf", dpi=300, bbox_inches="tight", pad_inches=0.01)
+plt.savefig("figure8a.pdf", dpi=300, bbox_inches="tight", pad_inches=0.01)
 plt.show()
 
 
@@ -107,4 +106,4 @@ xticks = plt.gca().get_xticks()
 xticklabels = plt.gca().get_xticklabels()
 index_to_color_red = list(xticks).index(5)
 xticklabels[index_to_color_red].set_color("red")
-plt.savefig(f"figure8b.pdf", dpi=300, bbox_inches="tight", pad_inches=0.01)
+plt.savefig("figure8b.pdf", dpi=300, bbox_inches="tight", pad_inches=0.01)

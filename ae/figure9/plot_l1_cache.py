@@ -1,6 +1,5 @@
 import matplotlib.pyplot as plt
 import seaborn as sns
-import csv
 import pandas as pd
 
 categories = [
@@ -25,13 +24,9 @@ colors_gelu = sns.color_palette("pink", 1)
 colors_allreduce = sns.color_palette("Blues_r", 2)
 colors = colors_matmul + colors_normalization + colors_gelu + colors_allreduce
 
-results_init = pd.read_csv(
-    "l1_cache_results_init.csv", header=None, names=col_names, index_col=0
-)
+results_init = pd.read_csv("l1_cache_results_init.csv", header=None, names=col_names, index_col=0)
 results_init.index.astype(int)
-results_ar = pd.read_csv(
-    "l1_cache_results_ar.csv", header=None, names=col_names, index_col=0
-)
+results_ar = pd.read_csv("l1_cache_results_ar.csv", header=None, names=col_names, index_col=0)
 results_ar.index.astype(int)
 
 areas = [

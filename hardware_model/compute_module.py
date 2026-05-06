@@ -1,5 +1,5 @@
 from math import ceil
-from software_model.utils import DataType, data_type_dict
+from software_model.utils import data_type_dict
 
 
 class VectorUnit:
@@ -17,9 +17,7 @@ class VectorUnit:
         self.flops_per_exp = flops_per_exp  # flops per exp instruction
         self.vector_width = vector_width
         self.vector_count = vector_count
-        self.flops_per_cycle = ceil(
-            total_vector_flops_per_cycle / vector_width / vector_count
-        )
+        self.flops_per_cycle = ceil(total_vector_flops_per_cycle / vector_width / vector_count)
         self.data_type = data_type
 
 
@@ -73,21 +71,15 @@ class Core:
 
 
 core_dict = {
-    "SM_A100_fp16": Core(
-        vector_unit_dict["A100_fp16"], systolic_array_dict["A100_fp16"], 4, 192 * 1024
-    ),
-    "SM_A100_int8": Core(
-        vector_unit_dict["A100_fp16"], systolic_array_dict["A100_int8"], 4, 192 * 1024
-    ),
+    "SM_A100_fp16": Core(vector_unit_dict["A100_fp16"], systolic_array_dict["A100_fp16"], 4, 192 * 1024),
+    "SM_A100_int8": Core(vector_unit_dict["A100_fp16"], systolic_array_dict["A100_int8"], 4, 192 * 1024),
     "Core_TPUv3_bf16": Core(
         vector_unit_dict["TPUv3_fp32"],
         systolic_array_dict["TPUv3_bf16"],
         2,
         16 * 1024 * 1024,
     ),
-    "CU_MI210_fp16": Core(
-        vector_unit_dict["MI210_fp32"], systolic_array_dict["MI210_fp16"], 4, 128 * 1024
-    ),
+    "CU_MI210_fp16": Core(vector_unit_dict["MI210_fp32"], systolic_array_dict["MI210_fp16"], 4, 128 * 1024),
     "Core_TPUv3_new": Core(
         vector_unit_dict["TPUv3_new"],
         systolic_array_dict["TPUv3_new"],
@@ -130,9 +122,7 @@ class ComputeModule:
         self.clock_freq = clock_freq
         self.l2_size = int(l2_size)  # Byte
         self.l2_bandwidth_per_cycle = l2_bandwidth_per_cycle  # Byte/clock
-        self.total_vector_flops_per_cycle = (
-            core.vector_unit.total_vector_flops_per_cycle * core_count
-        )
+        self.total_vector_flops_per_cycle = core.vector_unit.total_vector_flops_per_cycle * core_count
         self.total_vector_flops = self.total_vector_flops_per_cycle * clock_freq
         self.total_systolic_array_flops = (
             core_count

@@ -1,70 +1,45 @@
 import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
-import numpy as np
 
 
-matmul_TPUv3_sim = pd.read_csv(
-    "matmul_TPUv3_sim.csv", header=None, names=["M", "N", "K", "latency", "throughput"]
-)
-matmul_TPUv3_sim["throughput"] = (
-    matmul_TPUv3_sim["throughput"].str.extract(r"(\d+\.?\d*)").astype(float)
-)
+matmul_TPUv3_sim = pd.read_csv("matmul_TPUv3_sim.csv", header=None, names=["M", "N", "K", "latency", "throughput"])
+matmul_TPUv3_sim["throughput"] = matmul_TPUv3_sim["throughput"].str.extract(r"(\d+\.?\d*)").astype(float)
 matmul_TPUv3_sim.set_index(["M", "N", "K"], inplace=True)
 matmul_TPUv3_roofline = pd.read_csv(
     "matmul_TPUv3_roofline.csv",
     header=None,
     names=["M", "N", "K", "latency", "throughput"],
 )
-matmul_TPUv3_roofline["throughput"] = (
-    matmul_TPUv3_roofline["throughput"].str.extract(r"(\d+\.?\d*)").astype(float)
-)
+matmul_TPUv3_roofline["throughput"] = matmul_TPUv3_roofline["throughput"].str.extract(r"(\d+\.?\d*)").astype(float)
 matmul_TPUv3_roofline.set_index(["M", "N", "K"], inplace=True)
-matmul_A100 = pd.read_csv(
-    "real_hardware/matmul_A100.csv", header=None, names=["M", "N", "K", "latency", "throughput"]
-)
-matmul_A100["throughput"] = (
-    matmul_A100["throughput"].str.extract(r"(\d+\.?\d*)").astype(float)
-)
+matmul_A100 = pd.read_csv("real_hardware/matmul_A100.csv", header=None, names=["M", "N", "K", "latency", "throughput"])
+matmul_A100["throughput"] = matmul_A100["throughput"].str.extract(r"(\d+\.?\d*)").astype(float)
 matmul_A100.set_index(["M", "N", "K"], inplace=True)
-matmul_A100_sim = pd.read_csv(
-    "matmul_A100_sim.csv", header=None, names=["M", "N", "K", "latency", "throughput"]
-)
-matmul_A100_sim["throughput"] = (
-    matmul_A100_sim["throughput"].str.extract(r"(\d+\.?\d*)").astype(float)
-)
+matmul_A100_sim = pd.read_csv("matmul_A100_sim.csv", header=None, names=["M", "N", "K", "latency", "throughput"])
+matmul_A100_sim["throughput"] = matmul_A100_sim["throughput"].str.extract(r"(\d+\.?\d*)").astype(float)
 matmul_A100_sim.set_index(["M", "N", "K"], inplace=True)
 matmul_A100_roofline = pd.read_csv(
     "matmul_A100_roofline.csv",
     header=None,
     names=["M", "N", "K", "latency", "throughput"],
 )
-matmul_A100_roofline["throughput"] = (
-    matmul_A100_roofline["throughput"].str.extract(r"(\d+\.?\d*)").astype(float)
-)
+matmul_A100_roofline["throughput"] = matmul_A100_roofline["throughput"].str.extract(r"(\d+\.?\d*)").astype(float)
 matmul_A100_roofline.set_index(["M", "N", "K"], inplace=True)
 matmul_MI210 = pd.read_csv(
     "real_hardware/matmul_MI210.csv", header=None, names=["M", "N", "K", "latency", "throughput"]
 )
-matmul_MI210["throughput"] = (
-    matmul_MI210["throughput"].str.extract(r"(\d+\.?\d*)").astype(float)
-)
+matmul_MI210["throughput"] = matmul_MI210["throughput"].str.extract(r"(\d+\.?\d*)").astype(float)
 matmul_MI210.set_index(["M", "N", "K"], inplace=True)
-matmul_MI210_sim = pd.read_csv(
-    "matmul_MI210_sim.csv", header=None, names=["M", "N", "K", "latency", "throughput"]
-)
-matmul_MI210_sim["throughput"] = (
-    matmul_MI210_sim["throughput"].str.extract(r"(\d+\.?\d*)").astype(float)
-)
+matmul_MI210_sim = pd.read_csv("matmul_MI210_sim.csv", header=None, names=["M", "N", "K", "latency", "throughput"])
+matmul_MI210_sim["throughput"] = matmul_MI210_sim["throughput"].str.extract(r"(\d+\.?\d*)").astype(float)
 matmul_MI210_sim.set_index(["M", "N", "K"], inplace=True)
 matmul_MI210_roofline = pd.read_csv(
     "matmul_MI210_roofline.csv",
     header=None,
     names=["M", "N", "K", "latency", "throughput"],
 )
-matmul_MI210_roofline["throughput"] = (
-    matmul_MI210_roofline["throughput"].str.extract(r"(\d+\.?\d*)").astype(float)
-)
+matmul_MI210_roofline["throughput"] = matmul_MI210_roofline["throughput"].str.extract(r"(\d+\.?\d*)").astype(float)
 matmul_MI210_roofline.set_index(["M", "N", "K"], inplace=True)
 
 color_NV = sns.color_palette("Greens_d", 4)[1:]
@@ -88,19 +63,13 @@ for M in range(6, 16):
     M = 2**M
     M_list.append(M)
     throughput_TPU_sim_list.append(matmul_TPUv3_sim.loc[(M, N, K), "throughput"])
-    throughput_TPU_roofline_list.append(
-        matmul_TPUv3_roofline.loc[(M, N, K), "throughput"]
-    )
+    throughput_TPU_roofline_list.append(matmul_TPUv3_roofline.loc[(M, N, K), "throughput"])
     throughput_GPU_list.append(matmul_A100.loc[(M, N, K), "throughput"])
     throughput_GPU_sim_list.append(matmul_A100_sim.loc[(M, N, K), "throughput"])
-    throughput_GPU_roofline_list.append(
-        matmul_A100_roofline.loc[(M, N, K), "throughput"]
-    )
+    throughput_GPU_roofline_list.append(matmul_A100_roofline.loc[(M, N, K), "throughput"])
     throughput_AMD_list.append(matmul_MI210.loc[(M, N, K), "throughput"])
     throughput_AMD_sim_list.append(matmul_MI210_sim.loc[(M, N, K), "throughput"])
-    throughput_AMD_roofline_list.append(
-        matmul_MI210_roofline.loc[(M, N, K), "throughput"]
-    )
+    throughput_AMD_roofline_list.append(matmul_MI210_roofline.loc[(M, N, K), "throughput"])
 
 
 # plt.figure(figsize=(6, 2.8))
@@ -115,9 +84,7 @@ plt.plot(
     label="Roofline of NVIDIA A100",
     color=color_NV[0],
 )
-plt.plot(
-    M_list, throughput_GPU_list, marker="o", label="Real NVIDIA A100", color=color_NV[1]
-)
+plt.plot(M_list, throughput_GPU_list, marker="o", label="Real NVIDIA A100", color=color_NV[1])
 plt.plot(
     M_list,
     throughput_GPU_sim_list,
@@ -134,9 +101,7 @@ plt.plot(
     label="Roofline of AMD MI210",
     color=color_AMD[0],
 )
-plt.plot(
-    M_list, throughput_AMD_list, marker="o", label="Real AMD MI210", color=color_AMD[1]
-)
+plt.plot(M_list, throughput_AMD_list, marker="o", label="Real AMD MI210", color=color_AMD[1])
 plt.plot(
     M_list,
     throughput_AMD_sim_list,
@@ -189,19 +154,13 @@ for K in range(6, 16):
     N = K
     K_list.append(K)
     throughput_TPU_sim_list.append(matmul_TPUv3_sim.loc[(M, N, K), "throughput"])
-    throughput_TPU_roofline_list.append(
-        matmul_TPUv3_roofline.loc[(M, N, K), "throughput"]
-    )
+    throughput_TPU_roofline_list.append(matmul_TPUv3_roofline.loc[(M, N, K), "throughput"])
     throughput_GPU_list.append(matmul_A100.loc[(M, N, K), "throughput"])
     throughput_GPU_sim_list.append(matmul_A100_sim.loc[(M, N, K), "throughput"])
-    throughput_GPU_roofline_list.append(
-        matmul_A100_roofline.loc[(M, N, K), "throughput"]
-    )
+    throughput_GPU_roofline_list.append(matmul_A100_roofline.loc[(M, N, K), "throughput"])
     throughput_AMD_list.append(matmul_MI210.loc[(M, N, K), "throughput"])
     throughput_AMD_sim_list.append(matmul_MI210_sim.loc[(M, N, K), "throughput"])
-    throughput_AMD_roofline_list.append(
-        matmul_MI210_roofline.loc[(M, N, K), "throughput"]
-    )
+    throughput_AMD_roofline_list.append(matmul_MI210_roofline.loc[(M, N, K), "throughput"])
 
 
 plt.figure(figsize=(3.64, 2.8))
@@ -215,9 +174,7 @@ plt.plot(
     label="Roofline of NVIDIA A100",
     color=color_NV[0],
 )
-plt.plot(
-    K_list, throughput_GPU_list, marker="o", label="Real NVIDIA A100", color=color_NV[1]
-)
+plt.plot(K_list, throughput_GPU_list, marker="o", label="Real NVIDIA A100", color=color_NV[1])
 plt.plot(
     K_list,
     throughput_GPU_sim_list,
@@ -234,9 +191,7 @@ plt.plot(
     label="Roofline of AMD MI210",
     color=color_AMD[0],
 )
-plt.plot(
-    K_list, throughput_AMD_list, marker="o", label="Real AMD MI210", color=color_AMD[1]
-)
+plt.plot(K_list, throughput_AMD_list, marker="o", label="Real AMD MI210", color=color_AMD[1])
 plt.plot(
     K_list,
     throughput_AMD_sim_list,

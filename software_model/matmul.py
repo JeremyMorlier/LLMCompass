@@ -1,5 +1,4 @@
 from utils import size
-from typing import List, Tuple
 from hardware_model.device import Device
 from software_model.operators import Operator
 from software_model.utils import Tensor, DataType
@@ -57,21 +56,13 @@ class BatchedMatmul(Operator):
     def compile_and_simulate(self, pcb_module: Device, compile_mode: str):
         matmul = Matmul(self.data_type)
         _ = matmul(Tensor([self.M, self.K]), Tensor([self.K, self.N]))
-        matmul_latency1 = (
-            matmul.compile_and_simulate(pcb_module, compile_mode) * self.bs
-        )
+        matmul_latency1 = matmul.compile_and_simulate(pcb_module, compile_mode) * self.bs
 
         matmul = Matmul(self.data_type)
-        _ = matmul(
-            Tensor([self.M, self.K * self.bs]), Tensor([self.K * self.bs, self.N])
-        )
+        _ = matmul(Tensor([self.M, self.K * self.bs]), Tensor([self.K * self.bs, self.N]))
         matmul_latency2 = (
             matmul.compile_and_simulate(pcb_module, compile_mode)
-            + (self.bs - 1)
-            * self.M
-            * self.N
-            * self.data_type.word_size
-            / pcb_module.io_module.bandwidth
+            + (self.bs - 1) * self.M * self.N * self.data_type.word_size / pcb_module.io_module.bandwidth
         )
         self.latency = min(matmul_latency1, matmul_latency2)
         return self.latency
@@ -88,7 +79,7 @@ class BatchedMatmul(Operator):
             torch.cuda.synchronize()
         for _ in range(self.iterations):
             start = time.time()
-            output = torch.bmm(input1, input2)
+            _ = torch.bmm(input1, input2)
             torch.cuda.synchronize()
             end = time.time()
             latencies.append(end - start)
@@ -109,7 +100,7 @@ class BatchedMatmul(Operator):
             b = torch.randn(1, 1, 1, device="cuda")
             torch.cuda.synchronize()
             start = time.time()
-            c = torch.bmm(a, b)
+            _ = torch.bmm(a, b)
             torch.cuda.synchronize()
             end = time.time()
             latencies.append(end - start)
@@ -143,9 +134,7 @@ class Matmul(Operator):
         else:
             self.output_shape = self.input1_shape[:-1] + [self.N]
         output = Tensor(self.output_shape, self.data_type)
-        self.computational_graph = self.ComputationalGraph(
-            self.M, self.N, self.K, self.data_type
-        )
+        self.computational_graph = self.ComputationalGraph(self.M, self.N, self.K, self.data_type)
         self.flop_count = 2 * self.M * self.K * self.N
         self.io_count = self.M * self.K + self.K * self.N + self.M * self.N
         # print(f'{self.M}, {self.N}, {self.K}')
@@ -157,15 +146,14 @@ class Matmul(Operator):
             self.io_count
             / min(
                 pcb_module.io_module.bandwidth,
-                pcb_module.compute_module.l2_bandwidth_per_cycle
-                * pcb_module.compute_module.clock_freq,
+                pcb_module.compute_module.l2_bandwidth_per_cycle * pcb_module.compute_module.clock_freq,
             ),
         )
         return self.roofline_latency
 
     def print_latency(self):
         print(
-            f"{self.computational_graph.M}, {self.computational_graph.N}, {self.computational_graph.K}, {self.best_latency*1e3:.4f}ms, {self.latency_on_gpu*1e3:.4f}ms, {self.best_latency/self.latency_on_gpu*100:.2f}%",
+            f"{self.computational_graph.M}, {self.computational_graph.N}, {self.computational_graph.K}, {self.best_latency * 1e3:.4f}ms, {self.latency_on_gpu * 1e3:.4f}ms, {self.best_latency / self.latency_on_gpu * 100:.2f}%",
             flush=True,
         )
 
@@ -212,9 +200,7 @@ class Matmul(Operator):
 
         def display(self):
             print("-" * 10 + " Computational Graph " + "-" * 10)
-            print(
-                f"M: {self.M}, N: {self.N}, K: {self.K}, word_size(B): {self.data_type.word_size}"
-            )
+            print(f"M: {self.M}, N: {self.N}, K: {self.K}, word_size(B): {self.data_type.word_size}")
 
     class Mapping:
         def __init__(
@@ -248,7 +234,7 @@ class Matmul(Operator):
             self.dataflow = dataflow
 
         def display(self):
-            print(f'{"-"*10} Mapping {"-"*10}')
+            print(f"{'-' * 10} Mapping {'-' * 10}")
             print(
                 f"l2_tile_M: {self.l2_tile_M}, l2_tile_N: {self.l2_tile_N}, l2_tile_K: {self.l2_tile_K}, is_l2_double_buffering: {self.is_l2_double_buffering}, l2_loop_order: {self.l2_loop_order}"
             )
@@ -282,10 +268,7 @@ class Matmul(Operator):
         M = self.computational_graph.M
         N = self.computational_graph.N
         K = self.computational_graph.K
-        if (M == 1 or N == 1) and (
-            compile_mode == "heuristic-GPU"
-            or compile_mode == "heuristic-our-throughput"
-        ):
+        if (M == 1 or N == 1) and (compile_mode == "heuristic-GPU" or compile_mode == "heuristic-our-throughput"):
             working_set_size = M * K + N * K + M * N
             total_io_count = working_set_size * self.data_type.word_size
             io_latency = total_io_count / pcb_module.io_module.bandwidth
@@ -296,38 +279,19 @@ class Matmul(Operator):
                 / pcb_module.compute_module.core_count
                 / pcb_module.compute_module.clock_freq
             )
-            self.latency = max(
-                compute_latency, io_latency
-            )  # + pcb_module.io_module.latency * 2
+            self.latency = max(compute_latency, io_latency)  # + pcb_module.io_module.latency * 2
             return self.latency
         if compile_mode == "exhaustive":
             for l2_tile_M_log2 in range(5, ceil(log2(self.computational_graph.M)) + 1):
                 l2_tile_M = 2**l2_tile_M_log2
-                for l2_tile_N_log2 in range(
-                    5, ceil(log2(self.computational_graph.N)) + 1
-                ):
+                for l2_tile_N_log2 in range(5, ceil(log2(self.computational_graph.N)) + 1):
                     l2_tile_N = 2**l2_tile_N_log2
-                    for l2_tile_K_log2 in range(
-                        5, ceil(log2(self.computational_graph.K)) + 1
-                    ):
+                    for l2_tile_K_log2 in range(5, ceil(log2(self.computational_graph.K)) + 1):
                         l2_tile_K = 2**l2_tile_K_log2
-                        working_set_size = (
-                            l2_tile_N * l2_tile_K
-                            + l2_tile_M * l2_tile_K
-                            + l2_tile_M * l2_tile_N
-                        )
-                        if (
-                            working_set_size
-                            > pcb_module.compute_module.l2_size
-                            // self.data_type.word_size
-                        ):
+                        working_set_size = l2_tile_N * l2_tile_K + l2_tile_M * l2_tile_K + l2_tile_M * l2_tile_N
+                        if working_set_size > pcb_module.compute_module.l2_size // self.data_type.word_size:
                             continue
-                        elif (
-                            working_set_size
-                            <= pcb_module.compute_module.l2_size
-                            // self.data_type.word_size
-                            // 2
-                        ):
+                        elif working_set_size <= pcb_module.compute_module.l2_size // self.data_type.word_size // 2:
                             is_l2_double_buffering = True
                         else:
                             is_l2_double_buffering = False
@@ -338,12 +302,8 @@ class Matmul(Operator):
                                 for l1_tile_K_log2 in range(5, l2_tile_K_log2 + 1):
                                     l1_tile_K = 2**l1_tile_K_log2
                                     if (
-                                        l1_tile_M * l1_tile_N
-                                        + l1_tile_N * l1_tile_K
-                                        + l1_tile_M * l1_tile_K
-                                        > pcb_module.compute_module.core.SRAM_size
-                                        // self.data_type.word_size
-                                        // 2
+                                        l1_tile_M * l1_tile_N + l1_tile_N * l1_tile_K + l1_tile_M * l1_tile_K
+                                        > pcb_module.compute_module.core.SRAM_size // self.data_type.word_size // 2
                                     ):
                                         continue
                                     for l2_loop_order in [
@@ -403,35 +363,19 @@ class Matmul(Operator):
                     l2_tile_M * 8,
                     l2_tile_M * 16,
                     l2_tile_M * 32,
-                    
                 ]:
                     l2_tile_K_max = (
-                        pcb_module.compute_module.l2_size
-                        // self.data_type.word_size
-                        // 2
-                        - l2_tile_M * l2_tile_N
+                        pcb_module.compute_module.l2_size // self.data_type.word_size // 2 - l2_tile_M * l2_tile_N
                     ) // (l2_tile_M + l2_tile_N)
                     if l2_tile_K_max < 1:
                         continue
                     l2_tile_K = min(l2_tile_K_max, K)
                     l2_tile_K = floor(log2(l2_tile_K))
                     l2_tile_K = 2**l2_tile_K
-                    working_set_size = (
-                        l2_tile_N * l2_tile_K
-                        + l2_tile_M * l2_tile_K
-                        + l2_tile_M * l2_tile_N
-                    )
-                    if (
-                        working_set_size
-                        > pcb_module.compute_module.l2_size // self.data_type.word_size
-                    ):
+                    working_set_size = l2_tile_N * l2_tile_K + l2_tile_M * l2_tile_K + l2_tile_M * l2_tile_N
+                    if working_set_size > pcb_module.compute_module.l2_size // self.data_type.word_size:
                         continue
-                    elif (
-                        working_set_size
-                        <= pcb_module.compute_module.l2_size
-                        // self.data_type.word_size
-                        // 2
-                    ):
+                    elif working_set_size <= pcb_module.compute_module.l2_size // self.data_type.word_size // 2:
                         is_l2_double_buffering = True
                     else:
                         is_l2_double_buffering = False
@@ -444,9 +388,7 @@ class Matmul(Operator):
                         #     continue
                         l1_tile_N = l1_tile_M
                         l1_tile_K_max = (
-                            pcb_module.compute_module.core.SRAM_size
-                            // self.data_type.word_size
-                            // 2
+                            pcb_module.compute_module.core.SRAM_size // self.data_type.word_size // 2
                             - l1_tile_M * l1_tile_N
                         ) // (l1_tile_M + l1_tile_N)
                         if l1_tile_K_max < 1:
@@ -456,12 +398,8 @@ class Matmul(Operator):
                         l1_tile_K = 2**l1_tile_K
 
                         if (
-                            l1_tile_M * l1_tile_N
-                            + l1_tile_N * l1_tile_K
-                            + l1_tile_M * l1_tile_K
-                            > pcb_module.compute_module.core.SRAM_size
-                            // self.data_type.word_size
-                            // 2
+                            l1_tile_M * l1_tile_N + l1_tile_N * l1_tile_K + l1_tile_M * l1_tile_K
+                            > pcb_module.compute_module.core.SRAM_size // self.data_type.word_size // 2
                         ):
                             continue
                         l2_loop_order = "knm"
@@ -515,27 +453,12 @@ class Matmul(Operator):
                             K // 8192,
                         ]
                     for l2_K_tiling_factor in l2_K_tiling_factor_list:
-                        l2_tile_K = ceil(
-                            self.computational_graph.K / l2_K_tiling_factor
-                        )
+                        l2_tile_K = ceil(self.computational_graph.K / l2_K_tiling_factor)
                         l2_tile_K = 2 ** floor(log2(l2_tile_K))
-                        working_set_size = (
-                            l2_tile_N * l2_tile_K
-                            + l2_tile_M * l2_tile_K
-                            + l2_tile_M * l2_tile_N
-                        )
-                        if (
-                            working_set_size
-                            > pcb_module.compute_module.l2_size
-                            // self.data_type.word_size
-                        ):
+                        working_set_size = l2_tile_N * l2_tile_K + l2_tile_M * l2_tile_K + l2_tile_M * l2_tile_N
+                        if working_set_size > pcb_module.compute_module.l2_size // self.data_type.word_size:
                             continue
-                        elif (
-                            working_set_size
-                            <= pcb_module.compute_module.l2_size
-                            // self.data_type.word_size
-                            // 2
-                        ):
+                        elif working_set_size <= pcb_module.compute_module.l2_size // self.data_type.word_size // 2:
                             is_l2_double_buffering = True
                         else:
                             is_l2_double_buffering = False
@@ -547,12 +470,8 @@ class Matmul(Operator):
                             for l1_K_tiling_factor in [1, 2, 4, 8, 16, 32]:
                                 l1_tile_K = ceil(l2_tile_K / l1_K_tiling_factor)
                                 if (
-                                    l1_tile_M * l1_tile_N
-                                    + l1_tile_N * l1_tile_K
-                                    + l1_tile_M * l1_tile_K
-                                    > pcb_module.compute_module.core.SRAM_size
-                                    // self.data_type.word_size
-                                    // 2
+                                    l1_tile_M * l1_tile_N + l1_tile_N * l1_tile_K + l1_tile_M * l1_tile_K
+                                    > pcb_module.compute_module.core.SRAM_size // self.data_type.word_size // 2
                                 ):
                                     continue
                                 l2_loop_order = "knm"
@@ -561,11 +480,9 @@ class Matmul(Operator):
                                     l0_M_tiling_factor,
                                     l0_N_tiling_factor,
                                     l0_K_tiling_factor,
-                                ) in self.find_permutations(
-                                    pcb_module.compute_module.core.systolic_array_count
-                                ):
+                                ) in self.find_permutations(pcb_module.compute_module.core.systolic_array_count):
                                     i += 1
-                                    start = time.time()
+                                    _ = time.time()
                                     mapping = self.Mapping(
                                         l2_tile_M,
                                         l2_tile_N,
@@ -585,7 +502,7 @@ class Matmul(Operator):
                                         mapping,
                                         pcb_module,
                                     )
-                                    end = time.time()
+                                    _ = time.time()
                                     # if i % 1000 == 0:
                                     #     print(f"{i} simulation time: {end-start}")
                                     if cycle_count < min_cycle_count:
@@ -616,9 +533,7 @@ class Matmul(Operator):
                     if l1_tile_N <= 0:
                         continue
                     l1_tile_K_max = (
-                        pcb_module.compute_module.core.SRAM_size
-                        // self.data_type.word_size
-                        // 2
+                        pcb_module.compute_module.core.SRAM_size // self.data_type.word_size // 2
                         - l1_tile_M * l1_tile_N
                     ) // (l1_tile_M + l1_tile_N)
                     if l1_tile_K_max < 1:
@@ -684,9 +599,7 @@ class Matmul(Operator):
                     if l1_tile_N <= 0:
                         continue
                     l1_tile_K_max = (
-                        pcb_module.compute_module.core.SRAM_size
-                        // self.data_type.word_size
-                        // 2
+                        pcb_module.compute_module.core.SRAM_size // self.data_type.word_size // 2
                         - l1_tile_M * l1_tile_N
                     ) // (l1_tile_M + l1_tile_N)
                     if l1_tile_K_max < 1:
@@ -894,9 +807,7 @@ class Matmul(Operator):
             )
 
         total_cycle_count = 0
-        total_cycle_count += (
-            l2_tiles[0, 0, 0].M_K_io_cycle_count + l2_tiles[0, 0, 0].K_N_io_cycle_count
-        )
+        total_cycle_count += l2_tiles[0, 0, 0].M_K_io_cycle_count + l2_tiles[0, 0, 0].K_N_io_cycle_count
 
         previous_m = 0
         previous_n = 0
@@ -920,17 +831,13 @@ class Matmul(Operator):
             elif n == previous_n and k == previous_k:
                 current_tile_read_cycle_count = l2_tile.M_K_io_cycle_count
             else:
-                current_tile_read_cycle_count = (
-                    l2_tile.M_K_io_cycle_count + l2_tile.K_N_io_cycle_count
-                )
+                current_tile_read_cycle_count = l2_tile.M_K_io_cycle_count + l2_tile.K_N_io_cycle_count
             if k > 0 and not (m == previous_m and n == previous_n):
                 current_tile_read_cycle_count += l2_tile.M_N_io_cycle_count
             # previous tile compute latency
             previous_tile_compute_cycle_count = previous_l2_tile.compute_cycle_count
             if k > 0:
-                previous_tile_compute_cycle_count += (
-                    previous_l2_tile.K_reduction_cycle_count
-                )
+                previous_tile_compute_cycle_count += previous_l2_tile.K_reduction_cycle_count
             # previous tile write latency
             if m == previous_m and n == previous_n:
                 previous_tile_write_cycle_count = 0
@@ -940,16 +847,12 @@ class Matmul(Operator):
             # read current tile, compute previous tile, write previous tile
             if mapping.is_l2_double_buffering:  # pipelined
                 total_cycle_count += (
-                    max(
-                        current_tile_read_cycle_count, previous_tile_compute_cycle_count
-                    )
+                    max(current_tile_read_cycle_count, previous_tile_compute_cycle_count)
                     + previous_tile_write_cycle_count
                 )
             else:  # non-pipelined
                 total_cycle_count += (
-                    current_tile_read_cycle_count
-                    + previous_tile_compute_cycle_count
-                    + previous_tile_write_cycle_count
+                    current_tile_read_cycle_count + previous_tile_compute_cycle_count + previous_tile_write_cycle_count
                 )
 
             previous_m = m
@@ -957,15 +860,12 @@ class Matmul(Operator):
             previous_k = k
 
         # compute and write last tile
-        total_cycle_count += (
-            l2_tiles[-1, -1, -1].M_N_io_cycle_count
-            + l2_tiles[-1, -1, -1].compute_cycle_count
-        )
+        total_cycle_count += l2_tiles[-1, -1, -1].M_N_io_cycle_count + l2_tiles[-1, -1, -1].compute_cycle_count
 
         if previous_k > 0:
             total_cycle_count += ceil(l2_tiles[-1, -1, -1].K_reduction_cycle_count)
 
-        return total_cycle_count #+ ceil(
+        return total_cycle_count  # + ceil(
         # pcb_module.io_module.latency * 2 * pcb_module.compute_module.clock_freq
         # )
 
@@ -986,37 +886,21 @@ class Matmul(Operator):
             self.K = K
             self.K_reduction_cycle_count = ceil(
                 M * N / pcb_module.compute_module.total_vector_flops_per_cycle
-            ) + 2 * ceil(
-                M
-                * N
-                * data_type.word_size
-                / pcb_module.compute_module.l2_bandwidth_per_cycle
-            )
+            ) + 2 * ceil(M * N * data_type.word_size / pcb_module.compute_module.l2_bandwidth_per_cycle)
             self.K_reduction_io_count = 2 * M * N * data_type.word_size
-            self.M_K_io_cycle_count = self.simulate_l2_tile_io_cycle_count(
-                M, K, data_type, pcb_module
-            )
-            self.K_N_io_cycle_count = self.simulate_l2_tile_io_cycle_count(
-                K, N, data_type, pcb_module
-            )
-            self.M_N_io_cycle_count = self.simulate_l2_tile_io_cycle_count(
-                M, N, data_type, pcb_module
-            )
+            self.M_K_io_cycle_count = self.simulate_l2_tile_io_cycle_count(M, K, data_type, pcb_module)
+            self.K_N_io_cycle_count = self.simulate_l2_tile_io_cycle_count(K, N, data_type, pcb_module)
+            self.M_N_io_cycle_count = self.simulate_l2_tile_io_cycle_count(M, N, data_type, pcb_module)
             self.compute_cycle_count = self.simulate_l2_tile_compute_cycle_count(
                 M, N, K, data_type, mapping, pcb_module, look_up_table
             )
 
-        def simulate_l2_tile_io_cycle_count(
-            self, M: int, N: int, data_type: DataType, chiplet_module: Device
-        ):
+        def simulate_l2_tile_io_cycle_count(self, M: int, N: int, data_type: DataType, chiplet_module: Device):
             return ceil(
                 M
                 * N
                 * data_type.word_size
-                / (
-                    chiplet_module.io_module.bandwidth
-                    / chiplet_module.compute_module.clock_freq
-                )
+                / (chiplet_module.io_module.bandwidth / chiplet_module.compute_module.clock_freq)
             )
 
         def simulate_l2_tile_compute_cycle_count(
@@ -1125,9 +1009,7 @@ class Matmul(Operator):
                     look_up_table,
                 )
 
-            M_K_tile_size = np.zeros(
-                [ceil(M / l1_tile_M), ceil(K / l1_tile_K)], dtype=int
-            )
+            M_K_tile_size = np.zeros([ceil(M / l1_tile_M), ceil(K / l1_tile_K)], dtype=int)
             M_K_tile_size[:M_l1_t, :K_l1_t] = l1_tile_M * l1_tile_K
             if M_remain > 0:
                 M_K_tile_size[-1, :K_l1_t] = M_remain * l1_tile_K
@@ -1136,9 +1018,7 @@ class Matmul(Operator):
             if M_remain > 0 and K_remain > 0:
                 M_K_tile_size[-1, -1] = M_remain * K_remain
 
-            K_N_tile_size = np.zeros(
-                [ceil(K / l1_tile_K), ceil(N / l1_tile_N)], dtype=int
-            )
+            K_N_tile_size = np.zeros([ceil(K / l1_tile_K), ceil(N / l1_tile_N)], dtype=int)
             K_N_tile_size[:K_l1_t, :N_l1_t] = l1_tile_K * l1_tile_N
             if K_remain > 0:
                 K_N_tile_size[-1, :N_l1_t] = K_remain * l1_tile_N
@@ -1147,9 +1027,7 @@ class Matmul(Operator):
             if K_remain > 0 and N_remain > 0:
                 K_N_tile_size[-1, -1] = K_remain * N_remain
 
-            M_N_tile_size = np.zeros(
-                [ceil(M / l1_tile_M), ceil(N / l1_tile_N)], dtype=int
-            )
+            M_N_tile_size = np.zeros([ceil(M / l1_tile_M), ceil(N / l1_tile_N)], dtype=int)
             M_N_tile_size[:M_l1_t, :N_l1_t] = l1_tile_M * l1_tile_N
             if M_remain > 0:
                 M_N_tile_size[-1, :N_l1_t] = M_remain * l1_tile_N
@@ -1159,18 +1037,10 @@ class Matmul(Operator):
                 M_N_tile_size[-1, -1] = M_remain * N_remain
 
             total_cycle_count = 0
-            previous_batch_Read_M_K = np.zeros(
-                [ceil(M / l1_tile_M), ceil(K / l1_tile_K)], dtype=bool
-            )
-            previous_batch_Read_K_N = np.zeros(
-                [ceil(K / l1_tile_K), ceil(N / l1_tile_N)], dtype=bool
-            )
-            previous_batch_Read_M_N = np.zeros(
-                [ceil(M / l1_tile_M), ceil(N / l1_tile_N)], dtype=bool
-            )
-            previous_batch_Write_M_N = np.zeros(
-                [ceil(M / l1_tile_M), ceil(N / l1_tile_N)], dtype=bool
-            )
+            previous_batch_Read_M_K = np.zeros([ceil(M / l1_tile_M), ceil(K / l1_tile_K)], dtype=bool)
+            previous_batch_Read_K_N = np.zeros([ceil(K / l1_tile_K), ceil(N / l1_tile_N)], dtype=bool)
+            previous_batch_Read_M_N = np.zeros([ceil(M / l1_tile_M), ceil(N / l1_tile_N)], dtype=bool)
+            previous_batch_Write_M_N = np.zeros([ceil(M / l1_tile_M), ceil(N / l1_tile_N)], dtype=bool)
             previous_batch_compute_cycle_count = 0
             active_l1_tile_list = []
             for m, n, k in Matmul.generate_tile_loops(
@@ -1180,32 +1050,16 @@ class Matmul(Operator):
                 mapping.l1_loop_order,
             ):
                 active_l1_tile_list.append((m, n, k, l1_tiles[m, n, k]))
-                if (
-                    m == ceil(M / l1_tile_M) - 1
-                    and n == ceil(N / l1_tile_N) - 1
-                    and k == ceil(K / l1_tile_K) - 1
-                ):
+                if m == ceil(M / l1_tile_M) - 1 and n == ceil(N / l1_tile_N) - 1 and k == ceil(K / l1_tile_K) - 1:
                     pass
-                elif (
-                    len(active_l1_tile_list) < chiplet_module.compute_module.core_count
-                ):
+                elif len(active_l1_tile_list) < chiplet_module.compute_module.core_count:
                     continue
 
-                assert (
-                    len(active_l1_tile_list) <= chiplet_module.compute_module.core_count
-                )
-                current_batch_Read_M_K = np.zeros(
-                    [ceil(M / l1_tile_M), ceil(K / l1_tile_K)], dtype=bool
-                )
-                current_batch_Read_K_N = np.zeros(
-                    [ceil(K / l1_tile_K), ceil(N / l1_tile_N)], dtype=bool
-                )
-                current_batch_Read_M_N = np.zeros(
-                    [ceil(M / l1_tile_M), ceil(N / l1_tile_N)], dtype=bool
-                )
-                current_batch_Write_M_N = np.zeros(
-                    [ceil(M / l1_tile_M), ceil(N / l1_tile_N)], dtype=bool
-                )
+                assert len(active_l1_tile_list) <= chiplet_module.compute_module.core_count
+                current_batch_Read_M_K = np.zeros([ceil(M / l1_tile_M), ceil(K / l1_tile_K)], dtype=bool)
+                current_batch_Read_K_N = np.zeros([ceil(K / l1_tile_K), ceil(N / l1_tile_N)], dtype=bool)
+                current_batch_Read_M_N = np.zeros([ceil(M / l1_tile_M), ceil(N / l1_tile_N)], dtype=bool)
+                current_batch_Write_M_N = np.zeros([ceil(M / l1_tile_M), ceil(N / l1_tile_N)], dtype=bool)
 
                 current_batch_compute_cycle_count = 0
                 for i in range(len(active_l1_tile_list)):
@@ -1229,30 +1083,21 @@ class Matmul(Operator):
                 # if one output tile in this batch shares input/output with another output tile in the previous batch, assign them to the same core to avoid data movement
                 # note that of the three input matrix mk, kn, mn, at most one of them can be the same if we change m,n,k
                 current_batch_M_K_read_count = np.sum(
-                    (current_batch_Read_M_K * (~previous_batch_Read_M_K))
-                    * M_K_tile_size
+                    (current_batch_Read_M_K * (~previous_batch_Read_M_K)) * M_K_tile_size
                 )
                 current_batch_K_N_read_count = np.sum(
-                    (current_batch_Read_K_N * (~previous_batch_Read_K_N))
-                    * K_N_tile_size
+                    (current_batch_Read_K_N * (~previous_batch_Read_K_N)) * K_N_tile_size
                 )
                 current_batch_M_N_read_count = np.sum(
-                    (
-                        current_batch_Read_M_N
-                        * (~(previous_batch_Read_M_N + previous_batch_Write_M_N))
-                    )
-                    * M_N_tile_size
+                    (current_batch_Read_M_N * (~(previous_batch_Read_M_N + previous_batch_Write_M_N))) * M_N_tile_size
                 )
                 previous_batch_M_N_write_count = np.sum(
-                    (previous_batch_Write_M_N * (~current_batch_Read_M_N))
-                    * M_N_tile_size
+                    (previous_batch_Write_M_N * (~current_batch_Read_M_N)) * M_N_tile_size
                 )
 
                 # read current batch while compute and write previous batch
                 current_batch_read_count = (
-                    current_batch_M_K_read_count
-                    + current_batch_K_N_read_count
-                    + current_batch_M_N_read_count
+                    current_batch_M_K_read_count + current_batch_K_N_read_count + current_batch_M_N_read_count
                 )
                 current_batch_read_cycle_count = ceil(
                     current_batch_read_count
@@ -1319,12 +1164,7 @@ class Matmul(Operator):
             chiplet_module: Device,
             look_up_table: pd.DataFrame,
         ):
-            assert (
-                M * K + K * N + M * N
-                <= chiplet_module.compute_module.core.SRAM_size
-                // data_type.word_size
-                // 2
-            )
+            assert M * K + K * N + M * N <= chiplet_module.compute_module.core.SRAM_size // data_type.word_size // 2
 
             M_tiling_factor = mapping.l0_M_tiling_factor
             N_tiling_factor = mapping.l0_N_tiling_factor
@@ -1367,49 +1207,29 @@ class Matmul(Operator):
         # print(f'start: {M} {N} {K} {array_height} {array_width} {mac_per_clock} {dataflow}')
         assert M * N * K * array_height * array_width * mac_per_clock != 0
         if M >= array_height and N >= array_width:
-            if (
-                M * N * K / array_height / array_width / max(array_height, array_width)
-                >= 128
-            ):
-                return ceil(
-                    M * N * K / array_height / array_width / mac_per_clock / 0.99
-                )
-            elif (
-                M * N * K / array_height / array_width / max(array_height, array_width)
-                >= 64
-            ):
-                return ceil(
-                    M * N * K / array_height / array_width / mac_per_clock / 0.98
-                )
+            if M * N * K / array_height / array_width / max(array_height, array_width) >= 128:
+                return ceil(M * N * K / array_height / array_width / mac_per_clock / 0.99)
+            elif M * N * K / array_height / array_width / max(array_height, array_width) >= 64:
+                return ceil(M * N * K / array_height / array_width / mac_per_clock / 0.98)
         elif M >= array_height and N < array_width:
             if K * M / array_height / max(array_height, array_width) >= 64:
                 util_rate = N / array_width / 0.98
-                return ceil(
-                    M * N * K / array_height / array_width / mac_per_clock / util_rate
-                )
+                return ceil(M * N * K / array_height / array_width / mac_per_clock / util_rate)
         elif M < array_height and N >= array_width:
             if K * N / array_width / max(array_height, array_width) >= 64:
                 util_rate = M / array_height / 0.98
-                return ceil(
-                    M * N * K / array_height / array_width / mac_per_clock / util_rate
-                )
+                return ceil(M * N * K / array_height / array_width / mac_per_clock / util_rate)
         else:
             assert M < array_height and N < array_width
             if K / max(array_height, array_width) >= 64:
                 util_rate = M / array_height * N / array_width / 0.98
-                return ceil(
-                    M * N * K / array_height / array_width / mac_per_clock / util_rate
-                )
+                return ceil(M * N * K / array_height / array_width / mac_per_clock / util_rate)
         # print('start look up table')
         try:
-            cycle_count = look_up_table.loc[
-                (M, N, K, array_height, array_width, dataflow), "cycle_count"
-            ].item()
+            cycle_count = look_up_table.loc[(M, N, K, array_height, array_width, dataflow), "cycle_count"].item()
         except KeyError:
             try:
-                cycle_count = look_up_table.loc[
-                    (N, M, K, array_height, array_width, dataflow), "cycle_count"
-                ].item()
+                cycle_count = look_up_table.loc[(N, M, K, array_height, array_width, dataflow), "cycle_count"].item()
             except KeyError:
                 # print('not found in look up table')
                 config = f"./systolic_array_model/temp/systolic_array_{os.getpid()}.cfg"
@@ -1451,7 +1271,7 @@ class Matmul(Operator):
                     f.writelines("Layer, M, N, K\n")
                     f.writelines(f"matmul1, {M}, {N}, {K},\n")
 
-                logpath = f"./systolic_array_model/temp/"
+                logpath = "./systolic_array_model/temp/"
                 s = scalesim(
                     save_disk_space=True,
                     verbose=False,
@@ -1467,9 +1287,7 @@ class Matmul(Operator):
                     f"./systolic_array_model/look_up_table_{array_height}_{array_width}.csv",
                     "a",
                 ) as f:
-                    f.writelines(
-                        f"{M},{N},{K},{array_height},{array_width},{dataflow},{cycle_count},{util_rate:.3f}\n"
-                    )
+                    f.writelines(f"{M},{N},{K},{array_height},{array_width},{dataflow},{cycle_count},{util_rate:.3f}\n")
                 look_up_table.loc[(M, N, K, array_height, array_width, dataflow), :] = [
                     cycle_count,
                     util_rate,
@@ -1548,7 +1366,7 @@ class Matmul(Operator):
             b = torch.randn(size, size, device="cuda")
             torch.cuda.synchronize()
             start = time.time()
-            c = torch.matmul(a, b)
+            _ = torch.matmul(a, b)
             torch.cuda.synchronize()
             end = time.time()
             latencies.append(end - start)

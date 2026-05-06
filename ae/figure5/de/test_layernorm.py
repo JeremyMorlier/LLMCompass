@@ -20,7 +20,7 @@ if __name__ == "__main__":
     if args.gpu:
         gpu_kernel_launch_overhead = LayerNorm.gpu_kernel_launch_overhead()
 
-    print(f"Performance of LayerNorm")
+    print("Performance of LayerNorm")
     M = 2**12
     for N in range(5, 16):
         N = 2**N
@@ -32,12 +32,7 @@ if __name__ == "__main__":
                 latency = model.roofline_model(TPU) + 140e-6
                 file_name = "layernorm_TPUv3_roofline.csv"
             else:
-                latency = (
-                    model.compile_and_simulate(
-                        pcb_module=TPU, compile_mode="heuristic-TPU"
-                    )
-                    + 140e-6
-                )
+                latency = model.compile_and_simulate(pcb_module=TPU, compile_mode="heuristic-TPU") + 140e-6
                 file_name = "layernorm_TPUv3_sim.csv"
         else:
             model = LayerNorm(data_type=data_type_dict["fp16"])
@@ -54,33 +49,23 @@ if __name__ == "__main__":
                     latency = model.roofline_model(A100) + 4.5e-5
                     file_name = "layernorm_A100_roofline.csv"
                 else:
-                    latency = (
-                        model.compile_and_simulate(
-                            pcb_module=A100, compile_mode="heuristic-GPU"
-                        )
-                        + 4.5e-5
-                    )
+                    latency = model.compile_and_simulate(pcb_module=A100, compile_mode="heuristic-GPU") + 4.5e-5
                     file_name = "layernorm_A100_sim.csv"
             if args.simamd:
                 model = LayerNorm(data_type=data_type_dict["fp32"])
                 _ = model(Tensor([M, N], data_type=data_type_dict["fp32"]))
                 if args.roofline:
-                    latency = (
-                        model.roofline_model(MI210)
-                        + MI210.compute_module.overhead.layernorm
-                    )
+                    latency = model.roofline_model(MI210) + MI210.compute_module.overhead.layernorm
                     file_name = "layernorm_MI210_roofline.csv"
                 else:
                     latency = (
-                        model.compile_and_simulate(
-                            pcb_module=MI210, compile_mode="heuristic-GPU"
-                        )
+                        model.compile_and_simulate(pcb_module=MI210, compile_mode="heuristic-GPU")
                         + MI210.compute_module.overhead.layernorm
                     )
                     file_name = "layernorm_MI210_sim.csv"
-        print(f"{M}, {N}, {M*N/latency/1e9}")
+        print(f"{M}, {N}, {M * N / latency / 1e9}")
         with open(f"ae/figure5/de/{file_name}", "a") as f:
-            f.write(f"{M}, {N}, {M*N/latency/1e9}\n")
+            f.write(f"{M}, {N}, {M * N / latency / 1e9}\n")
 
     N = 2**12
     for M in range(5, 16):
@@ -91,12 +76,7 @@ if __name__ == "__main__":
             if args.roofline:
                 latency = model.roofline_model(TPU) + 140e-6
             else:
-                latency = (
-                    model.compile_and_simulate(
-                        pcb_module=TPU, compile_mode="heuristic-TPU"
-                    )
-                    + 140e-6
-                )
+                latency = model.compile_and_simulate(pcb_module=TPU, compile_mode="heuristic-TPU") + 140e-6
         else:
             model = LayerNorm(data_type=data_type_dict["fp16"])
             _ = model(
@@ -110,27 +90,17 @@ if __name__ == "__main__":
                 if args.roofline:
                     latency = model.roofline_model(A100) + 4.5e-5
                 else:
-                    latency = (
-                        model.compile_and_simulate(
-                            pcb_module=A100, compile_mode="heuristic-GPU"
-                        )
-                        + 4.5e-5
-                    )
+                    latency = model.compile_and_simulate(pcb_module=A100, compile_mode="heuristic-GPU") + 4.5e-5
             if args.simamd:
                 model = LayerNorm(data_type=data_type_dict["fp32"])
                 _ = model(Tensor([M, N], data_type=data_type_dict["fp32"]))
                 if args.roofline:
-                    latency = (
-                        model.roofline_model(MI210)
-                        + MI210.compute_module.overhead.layernorm
-                    )
+                    latency = model.roofline_model(MI210) + MI210.compute_module.overhead.layernorm
                 else:
                     latency = (
-                        model.compile_and_simulate(
-                            pcb_module=MI210, compile_mode="heuristic-GPU"
-                        )
+                        model.compile_and_simulate(pcb_module=MI210, compile_mode="heuristic-GPU")
                         + MI210.compute_module.overhead.layernorm
                     )
-        print(f"{M}, {N}, {M*N/latency/1e9}")
+        print(f"{M}, {N}, {M * N / latency / 1e9}")
         with open(f"ae/figure5/de/{file_name}", "a") as f:
-            f.write(f"{M}, {N}, {M*N/latency/1e9}\n")
+            f.write(f"{M}, {N}, {M * N / latency / 1e9}\n")

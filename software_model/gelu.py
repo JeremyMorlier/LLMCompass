@@ -1,12 +1,10 @@
 from utils import size
-from typing import List, Tuple
 from hardware_model.device import Device
 from software_model.operators import Operator
 from software_model.utils import Tensor, DataType
-from math import ceil, log2, log
+from math import ceil
 import time
 import statistics
-import numpy as np
 import torch
 
 
@@ -29,20 +27,15 @@ class GeLU(Operator):
         return input
 
     def roofline_model(self, pcb_module: Device):
-        self.computational_graph.data_type = (
-            pcb_module.compute_module.core.vector_unit.data_type
-        )
+        self.computational_graph.data_type = pcb_module.compute_module.core.vector_unit.data_type
         M = self.M
         data_type = self.computational_graph.data_type
         total_io_count = M * 2 * data_type.word_size
-        io_latency = (
-            total_io_count / min(pcb_module.io_module.bandwidth
-            , pcb_module.compute_module.l2_bandwidth_per_cycle
-            * pcb_module.compute_module.clock_freq)
+        io_latency = total_io_count / min(
+            pcb_module.io_module.bandwidth,
+            pcb_module.compute_module.l2_bandwidth_per_cycle * pcb_module.compute_module.clock_freq,
         )
-        total_flop_count = M * (
-            10 + pcb_module.compute_module.core.vector_unit.flops_per_exp
-        )
+        total_flop_count = M * (10 + pcb_module.compute_module.core.vector_unit.flops_per_exp)
         compute_latency = (
             total_flop_count
             / pcb_module.compute_module.core.vector_unit.total_vector_flops_per_cycle
@@ -53,17 +46,15 @@ class GeLU(Operator):
         return self.roofline_latency
 
     def print_latency(self):
-        print(f"{self.shape}, {self.latency_on_gpu*1e6}us")
+        print(f"{self.shape}, {self.latency_on_gpu * 1e6}us")
 
     class ComputationalGraph:
-        def __init__(self, M: int, data_type: DataType):            
+        def __init__(self, M: int, data_type: DataType):
             self.M = M
             self.data_type = data_type
 
     def compile_and_simulate(self, pcb_module: Device, compile_mode: str):
-        self.computational_graph.data_type = (
-            pcb_module.compute_module.core.vector_unit.data_type
-        )
+        self.computational_graph.data_type = pcb_module.compute_module.core.vector_unit.data_type
         parallelism = (
             pcb_module.compute_module.core_count
             * pcb_module.compute_module.core.vector_unit.vector_width
@@ -74,13 +65,9 @@ class GeLU(Operator):
         total_io_count = M * 2 * data_type.word_size
         io_latency = (
             total_io_count / pcb_module.io_module.bandwidth
-            + total_io_count
-            / pcb_module.compute_module.l2_bandwidth_per_cycle
-            / pcb_module.compute_module.clock_freq
+            + total_io_count / pcb_module.compute_module.l2_bandwidth_per_cycle / pcb_module.compute_module.clock_freq
         )
-        total_flop_count = M * (
-            10 + pcb_module.compute_module.core.vector_unit.flops_per_exp
-        )
+        total_flop_count = M * (10 + pcb_module.compute_module.core.vector_unit.flops_per_exp)
         compute_latency = (
             total_flop_count
             / pcb_module.compute_module.core.vector_unit.total_vector_flops_per_cycle
@@ -120,7 +107,7 @@ class GeLU(Operator):
             a = torch.randn(size, size, device="cuda")
             torch.cuda.synchronize()
             start = time.time()
-            c = gelu_gpu(a)
+            _ = gelu_gpu(a)
             torch.cuda.synchronize()
             end = time.time()
             latencies.append(end - start)

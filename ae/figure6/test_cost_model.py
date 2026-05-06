@@ -6,8 +6,8 @@ import pandas as pd
 
 arch_specs = read_architecture_template("configs/GA100.json")
 
-compute_chiplet_area_mm2, A100_core_breakdown_map, compute_total_die_map = (
-    calc_compute_chiplet_area_mm2(arch_specs, verbose=True)
+compute_chiplet_area_mm2, A100_core_breakdown_map, compute_total_die_map = calc_compute_chiplet_area_mm2(
+    arch_specs, verbose=True
 )
 io_die_area_mm2, io_total_die_map = calc_io_die_area_mm2(arch_specs, verbose=True)
 
@@ -23,9 +23,7 @@ categories = [
     "Other",
 ]
 
-die_area = pd.read_csv(
-    "ae/figure6/real_hardware/die_area.csv", header=None, names=["A100", "MI210"]
-)
+die_area = pd.read_csv("ae/figure6/real_hardware/die_area.csv", header=None, names=["A100", "MI210"])
 
 values_a100 = die_area["A100"].tolist()
 values_mi210 = die_area["MI210"].tolist()
@@ -44,8 +42,8 @@ values_a100_sim = [
 
 arch_specs = read_architecture_template("configs/mi210_template.json")
 
-compute_chiplet_area_mm2, MI210_core_breakdown_map, compute_total_die_map = (
-    calc_compute_chiplet_area_mm2(arch_specs, verbose=True)
+compute_chiplet_area_mm2, MI210_core_breakdown_map, compute_total_die_map = calc_compute_chiplet_area_mm2(
+    arch_specs, verbose=True
 )
 io_die_area_mm2, io_total_die_map = calc_io_die_area_mm2(arch_specs, verbose=True)
 
@@ -67,13 +65,7 @@ colors_matmul = sns.color_palette("flare_r", 7)[5:6]
 colors_normalization = sns.color_palette("summer", 2)
 colors_gelu = sns.color_palette("pink", 5)[2:4]
 colors_allreduce = sns.color_palette("Blues_r", 2)
-colors = (
-    colors_matmul
-    + colors_normalization
-    + colors_gelu
-    + colors_allreduce
-    + sns.color_palette("Greys_r", 1)
-)
+colors = colors_matmul + colors_normalization + colors_gelu + colors_allreduce + sns.color_palette("Greys_r", 1)
 
 bottom = 0
 for i, (category, value) in enumerate(zip(categories, values_a100)):

@@ -3,17 +3,12 @@ import numpy as np
 import seaborn as sns
 import matplotlib.pyplot as plt
 
+import statistics
 
-our_decoding = pd.read_csv(
-    "our_decoding.csv", header=None, names=["bs", "s", "latency"]
-).sort_values(by="s")
+our_decoding = pd.read_csv("our_decoding.csv", header=None, names=["bs", "s", "latency"]).sort_values(by="s")
 our_prefill = pd.read_csv("our_prefill.csv", header=None, names=["bs", "s", "latency"])
-A100_decoding = pd.read_csv(
-    "A100_decoding.csv", header=None, names=["bs", "s", "latency"]
-).sort_values(by="s")
-A100_prefill = pd.read_csv(
-    "A100_prefill.csv", header=None, names=["bs", "s", "latency"]
-)
+A100_decoding = pd.read_csv("A100_decoding.csv", header=None, names=["bs", "s", "latency"]).sort_values(by="s")
+A100_prefill = pd.read_csv("A100_prefill.csv", header=None, names=["bs", "s", "latency"])
 
 
 def get_total_decoding_latency(df: pd.DataFrame, start, end):
@@ -36,12 +31,8 @@ def get_total_decoding_latency(df: pd.DataFrame, start, end):
 norm_perf = []
 for input_length in [256, 512, 1024, 2048]:
     temp_list = []
-    our_prefill_latency = our_prefill[our_prefill["s"] == input_length][
-        "latency"
-    ].values[0]
-    A100_prefill_latency = A100_prefill[A100_prefill["s"] == input_length][
-        "latency"
-    ].values[0]
+    our_prefill_latency = our_prefill[our_prefill["s"] == input_length]["latency"].values[0]
+    A100_prefill_latency = A100_prefill[A100_prefill["s"] == input_length]["latency"].values[0]
     for output_length in [256, 512, 768, 1024, 1280, 1536, 1792, 2048]:
         our_total_latency = our_prefill_latency + get_total_decoding_latency(
             our_decoding, input_length, input_length + output_length
@@ -54,7 +45,6 @@ for input_length in [256, 512, 1024, 2048]:
 
 cmap = sns.color_palette("viridis", as_cmap=True)
 data = np.array(norm_perf)
-import statistics
 
 print(statistics.geometric_mean(data.flatten()))
 fig, ax = plt.subplots()
@@ -80,9 +70,7 @@ for i in range(data.shape[0]):
         intensity = get_intensity(cell_color)
         # Choose text color based on intensity
         text_color = "white" if intensity < intensity_threshold else "black"
-        text = ax.text(
-            j, i, round(data[i, j], 2), ha="center", va="center", color=text_color
-        )
+        text = ax.text(j, i, round(data[i, j], 2), ha="center", va="center", color=text_color)
 
 # Set the x-axis and y-axis values
 x_axis_labels = [256, 512, 768, 1024, 1280, 1536, 1792, 2048]

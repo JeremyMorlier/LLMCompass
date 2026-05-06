@@ -3,6 +3,7 @@ import seaborn as sns
 import csv
 import pandas as pd
 
+
 def read_csv(filename: str):
     numbers = []
     # Open the CSV file and read the numbers
@@ -38,12 +39,16 @@ values_simgpu = pd.read_csv("transformer_A100_sim.csv", header=None, names=categ
 print(values_simgpu)
 values_gpu = read_csv("real_hardware/transformer_A100.csv")
 # values_gpu_roofline = read_csv("transformer_A100_roofline.csv")
-values_gpu_roofline = pd.read_csv("transformer_A100_roofline.csv", header=None, names=categories, index_col=None).iloc[0].tolist()
+values_gpu_roofline = (
+    pd.read_csv("transformer_A100_roofline.csv", header=None, names=categories, index_col=None).iloc[0].tolist()
+)
 # values_simtpu = read_csv("transformer_TPUv3_sim.csv")
 values_simtpu = pd.read_csv("transformer_TPUv3_sim.csv", header=None, names=categories, index_col=None).iloc[0].tolist()
 
 # values_tpu_roofline = read_csv("transformer_TPUv3_roofline.csv")
-values_tpu_roofline = pd.read_csv("transformer_TPUv3_roofline.csv", header=None, names=categories, index_col=None).iloc[0].tolist()
+values_tpu_roofline = (
+    pd.read_csv("transformer_TPUv3_roofline.csv", header=None, names=categories, index_col=None).iloc[0].tolist()
+)
 
 plt.figure(figsize=(3, 2.8))
 
@@ -66,7 +71,7 @@ for i, (category, value) in enumerate(zip(categories, values_gpu_roofline)):
     bottom += value
 value_roofline = bottom
 
-print(f"gpu prefilling: {value_sim/value_gt}, {value_roofline/value_gt}")
+print(f"gpu prefilling: {value_sim / value_gt}, {value_roofline / value_gt}")
 # Set the title, legend, and display the graph
 # plt.title(
 #     "GPU Runtime Breakdown of One Transformer Layer in GPT-3 \n(Initial computation, batch size = 8, sequence length = 2048)"
@@ -116,10 +121,14 @@ plt.savefig("figure5j.pdf", bbox_inches="tight", pad_inches=0.01, dpi=300)
 
 
 # values_simgpu = read_csv("transformerAR_A100_sim.csv")
-values_simgpu=pd.read_csv("transformerAR_A100_sim.csv",header=None,names=categories,index_col=None).iloc[0].tolist()
+values_simgpu = (
+    pd.read_csv("transformerAR_A100_sim.csv", header=None, names=categories, index_col=None).iloc[0].tolist()
+)
 values_gpu = read_csv("real_hardware/transformerAR_A100.csv")
 # values_gpu_roofline = read_csv("transformerAR_A100_roofline.csv")
-values_gpu_roofline=pd.read_csv("transformerAR_A100_roofline.csv",header=None,names=categories,index_col=None).iloc[0].tolist()
+values_gpu_roofline = (
+    pd.read_csv("transformerAR_A100_roofline.csv", header=None, names=categories, index_col=None).iloc[0].tolist()
+)
 
 plt.figure(figsize=(3, 2.8))
 
@@ -160,13 +169,15 @@ plt.tight_layout()
 plt.savefig("figure5k.pdf", bbox_inches="tight", pad_inches=0.01, dpi=300)
 
 
-
-
 # values_simtpu = read_csv("transformerAR_TPUv3_sim.csv")
-values_simtpu = pd.read_csv("transformerAR_TPUv3_sim.csv", header=None, names=categories, index_col=None).iloc[0].tolist()
+values_simtpu = (
+    pd.read_csv("transformerAR_TPUv3_sim.csv", header=None, names=categories, index_col=None).iloc[0].tolist()
+)
 # values_tpu = read_csv("real_hardware/transformerAR_TPUv3.csv")
 # values_tpu_roofline=read_csv("transformerAR_TPUv3_roofline.csv")
-values_tpu_roofline=pd.read_csv("transformerAR_TPUv3_roofline.csv",header=None,names=categories,index_col=None).iloc[0].tolist()
+values_tpu_roofline = (
+    pd.read_csv("transformerAR_TPUv3_roofline.csv", header=None, names=categories, index_col=None).iloc[0].tolist()
+)
 
 plt.figure(figsize=(4.5, 2.8))
 
@@ -180,18 +191,18 @@ plt.figure(figsize=(4.5, 2.8))
 
 bottom = 0
 for i, (category, value) in enumerate(zip(categories, values_simtpu)):
-    value=value*1e3
-    plt.bar(2, value, bottom=bottom, color=colors[i], label=category,width=0.5)
+    value = value * 1e3
+    plt.bar(2, value, bottom=bottom, color=colors[i], label=category, width=0.5)
     bottom += value
-value_sim=bottom
+value_sim = bottom
 
 bottom = 0
 for i, (category, value) in enumerate(zip(categories, values_tpu_roofline)):
-    value=value*1e3
+    value = value * 1e3
     plt.bar(3, value, bottom=bottom, color=colors[i], width=0.5)
     bottom += value
-value_roofline=bottom
-print(value_sim/value_gt,value_roofline/value_gt)
+value_roofline = bottom
+print(value_sim / value_gt, value_roofline / value_gt)
 
 # Set the title, legend, and display the graph
 # plt.title(
@@ -203,4 +214,4 @@ plt.xticks([1, 2, 3], ["Real\nTPUv3", "Simulated\nTPUv3", "Roofline\nModel"])
 handles, labels = plt.gca().get_legend_handles_labels()
 plt.legend(handles[::-1], labels[::-1], loc="upper left", bbox_to_anchor=(1, 1.05))
 plt.tight_layout()
-plt.savefig("figure5l.pdf",bbox_inches="tight", pad_inches=0.01, dpi=300)
+plt.savefig("figure5l.pdf", bbox_inches="tight", pad_inches=0.01, dpi=300)

@@ -45,20 +45,14 @@ class InterConnectModule:
         self.topology = topology
         self.link_module = link_module
         self.link_count_per_device = link_count_per_device
-        self.internal_link_bandwidth_per_direction = (
-            internal_link_bandwidth_per_direction
-        )
+        self.internal_link_bandwidth_per_direction = internal_link_bandwidth_per_direction
         pass
 
 
 # we treat the 2D torus interconnect of 8 TPU cores as 2 rings + internal link
 interconnect_module_dict = {
-    "NVLinkV3_FC_4": InterConnectModule(
-        4, TopologyType.FC, link_module_dict["NVLinkV3"], 12
-    ),
-    "TPUv3Link_8": InterConnectModule(
-        4, TopologyType.RING, link_module_dict["TPUv3Link"], 2, 162.5e9
-    ),
+    "NVLinkV3_FC_4": InterConnectModule(4, TopologyType.FC, link_module_dict["NVLinkV3"], 12),
+    "TPUv3Link_8": InterConnectModule(4, TopologyType.RING, link_module_dict["TPUv3Link"], 2, 162.5e9),
 }
 
 # class InterConnectTorusModule:

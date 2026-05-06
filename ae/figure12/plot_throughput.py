@@ -69,13 +69,9 @@ for input_length in [256, 512, 1024, 2048]:
             header=None,
             names=categories,
         ).sort_values(by="s")
-        our_decoding_latency = get_total_decoding_latency(
-            our_decoding_df, input_length, input_length + output_length
-        )
+        our_decoding_latency = get_total_decoding_latency(our_decoding_df, input_length, input_length + output_length)
         # print(our_decoding_latency)
-        our_throughput = (
-            our_bs * output_length / (our_prefill_latency + our_decoding_latency) / 12
-        )
+        our_throughput = our_bs * output_length / (our_prefill_latency + our_decoding_latency) / 12
         temp_our.append(our_throughput)
         temp_our_latency.append(our_prefill_latency + our_decoding_latency)
 
@@ -92,15 +88,8 @@ for input_length in [256, 512, 1024, 2048]:
             header=None,
             names=categories,
         ).sort_values(by="s")
-        A100_decoding_latency = get_total_decoding_latency(
-            A100_decoding_df, input_length, input_length + output_length
-        )
-        A100_throughput = (
-            A100_bs
-            * output_length
-            / (A100_prefill_latency + A100_decoding_latency)
-            / 12
-        )
+        A100_decoding_latency = get_total_decoding_latency(A100_decoding_df, input_length, input_length + output_length)
+        A100_throughput = A100_bs * output_length / (A100_prefill_latency + A100_decoding_latency) / 12
         temp_A100.append(A100_throughput)
         temp_A100_latency.append(A100_prefill_latency + A100_decoding_latency)
 
@@ -114,11 +103,7 @@ for input_length in [256, 512, 1024, 2048]:
 # print(throughput_A100)
 print(latency_our)
 print(latency_A100)
-print(
-    statistics.geometric_mean(
-        (np.array(latency_our) / np.array(latency_A100)).flatten()
-    )
-)
+print(statistics.geometric_mean((np.array(latency_our) / np.array(latency_A100)).flatten()))
 
 
 # Function to convert RGB to grayscale intensity
@@ -146,9 +131,7 @@ for i in range(data.shape[0]):
         intensity = get_intensity(cell_color)
         # Choose text color based on intensity
         text_color = "white" if intensity < intensity_threshold else "black"
-        text = ax.text(
-            j, i, int(data[i, j]), ha="center", va="center", color=text_color
-        )
+        text = ax.text(j, i, int(data[i, j]), ha="center", va="center", color=text_color)
 
 # Set the x-axis and y-axis values
 x_axis_labels = [256, 512, 768, 1024, 1280, 1536, 1792, 2048]
@@ -172,9 +155,6 @@ ax.invert_yaxis()
 # Show the plot
 plt.tight_layout()
 plt.savefig("figure12a.pdf", dpi=300, bbox_inches="tight", pad_inches=0.01)
-
-
-import statistics
 
 cmap = sns.color_palette("viridis", as_cmap=True)
 data = np.array(throughput_our) / np.array(throughput_A100)
@@ -200,9 +180,7 @@ for i in range(data.shape[0]):
         intensity = get_intensity(cell_color)
         # Choose text color based on intensity
         text_color = "white" if intensity < intensity_threshold else "black"
-        text = ax.text(
-            j, i, round(data[i, j], 2), ha="center", va="center", color=text_color
-        )
+        text = ax.text(j, i, round(data[i, j], 2), ha="center", va="center", color=text_color)
 
 # Set the x-axis and y-axis values
 x_axis_labels = [256, 512, 768, 1024, 1280, 1536, 1792, 2048]

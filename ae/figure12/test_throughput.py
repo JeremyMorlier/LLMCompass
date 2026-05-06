@@ -18,17 +18,17 @@ our_compute_area_mm2 = calc_compute_chiplet_area_mm2(our_specs)
 our_io_area_mm2 = calc_io_die_area_mm2(our_specs)
 print(f"A100 compute area: {A100_compute_area_mm2} mm2")
 print(f"A100 IO area: {A100_io_area_mm2} mm2")
-print(f"A100 total area: {A100_compute_area_mm2+A100_io_area_mm2} mm2")
+print(f"A100 total area: {A100_compute_area_mm2 + A100_io_area_mm2} mm2")
 print(f"Our compute area: {our_compute_area_mm2} mm2")
 print(f"Our IO area: {our_io_area_mm2} mm2")
-print(f"Our total area: {our_compute_area_mm2+our_io_area_mm2} mm2")
+print(f"Our total area: {our_compute_area_mm2 + our_io_area_mm2} mm2")
 with open("ae/figure12/area.csv", "w") as f:
     f.write(f"A100 compute area: {A100_compute_area_mm2} mm2\n")
     f.write(f"A100 IO area: {A100_io_area_mm2} mm2\n")
-    f.write(f"A100 total area: {A100_compute_area_mm2+A100_io_area_mm2} mm2\n")
+    f.write(f"A100 total area: {A100_compute_area_mm2 + A100_io_area_mm2} mm2\n")
     f.write(f"Our compute area: {our_compute_area_mm2} mm2\n")
     f.write(f"Our IO area: {our_io_area_mm2} mm2\n")
-    f.write(f"Our total area: {our_compute_area_mm2+our_io_area_mm2} mm2\n")
+    f.write(f"Our total area: {our_compute_area_mm2 + our_io_area_mm2} mm2\n")
 
 
 def simulate_decoding_latency(system, bs, seq_len, name, lock, heuristics):
@@ -42,14 +42,10 @@ def simulate_decoding_latency(system, bs, seq_len, name, lock, heuristics):
         Tensor([bs, 1, 12288], data_type_dict["fp16"]),
         seq_len,
     )
-    auto_regression_latency_simulated = model_auto_regression.compile_and_simulate(
-        system, heuristics
-    )
+    auto_regression_latency_simulated = model_auto_regression.compile_and_simulate(system, heuristics)
     with lock:
         with open(f"ae/figure12/{name}_decoding.csv", "a") as f:
-            f.write(
-                f"{bs}, {seq_len}, {auto_regression_latency_simulated}, {model_auto_regression.simluate_log}\n"
-            )
+            f.write(f"{bs}, {seq_len}, {auto_regression_latency_simulated}, {model_auto_regression.simluate_log}\n")
 
 
 def simulate_prefill_latency(system, bs, seq_len, name, lock, heuristics):
@@ -101,9 +97,7 @@ for input_seq_len in [
             else:
                 name = f"our/our_{input_seq_len}_{output_seq_len}"
                 lock = lock_our_prefill
-                bs = (512e9 - 2 * 12 * 12288**2 * 12) // (
-                    (12 * 4 + 8) * seq_len * 12288
-                )
+                bs = (512e9 - 2 * 12 * 12288**2 * 12) // ((12 * 4 + 8) * seq_len * 12288)
                 heuristics = "heuristic-our-throughput"
             bs = int(bs)
             # print(bs)

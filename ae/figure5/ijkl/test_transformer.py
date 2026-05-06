@@ -72,9 +72,7 @@ if __name__ == "__main__":
                 data_type=data_type_dict["fp16"],
             )
             A100_system = system_dict["A100_4_fp16"]
-            _ = model(
-                Tensor([bs, 1, 12288], data_type_dict["fp16"]), s + output_token_length
-            )
+            _ = model(Tensor([bs, 1, 12288], data_type_dict["fp16"]), s + output_token_length)
             if args.roofline:
                 model.roofline_model(A100_system)
                 file_name = "transformerAR_A100_roofline.csv"
@@ -89,9 +87,7 @@ if __name__ == "__main__":
                 data_type=data_type_dict["fp16"],
             )
             TPU_system = system_dict["TPUv3_8"]
-            _ = model(
-                Tensor([bs, 1, 12288], data_type_dict["fp16"]), s + output_token_length
-            )
+            _ = model(Tensor([bs, 1, 12288], data_type_dict["fp16"]), s + output_token_length)
             if args.roofline:
                 model.roofline_model(TPU_system)
                 file_name = "transformerAR_TPUv3_roofline.csv"
@@ -105,9 +101,7 @@ if __name__ == "__main__":
                 device_count=4,
                 data_type=data_type_dict["fp16"],
             )
-            _ = model(
-                Tensor([bs, 1, 12288], data_type_dict["fp16"]), s + output_token_length
-            )
+            _ = model(Tensor([bs, 1, 12288], data_type_dict["fp16"]), s + output_token_length)
             model.run_on_gpu()
     with open(f"ae/figure5/ijkl/{file_name}", "w") as f:
         if args.roofline:

@@ -1,5 +1,4 @@
 from software_model.transformer import (
-    TransformerBlockInitComputationTP,
     TransformerBlockAutoRegressionTP,
 )
 from software_model.utils import data_type_dict, Tensor
@@ -18,10 +17,10 @@ our_compute_area_mm2 = calc_compute_chiplet_area_mm2(our_specs)
 our_io_area_mm2 = calc_io_die_area_mm2(our_specs)
 print(f"A100 compute area: {A100_compute_area_mm2} mm2")
 print(f"A100 IO area: {A100_io_area_mm2} mm2")
-print(f"A100 total area: {A100_compute_area_mm2+A100_io_area_mm2} mm2")
+print(f"A100 total area: {A100_compute_area_mm2 + A100_io_area_mm2} mm2")
 print(f"Our compute area: {our_compute_area_mm2} mm2")
 print(f"Our IO area: {our_io_area_mm2} mm2")
-print(f"Our total area: {our_compute_area_mm2+our_io_area_mm2} mm2")
+print(f"Our total area: {our_compute_area_mm2 + our_io_area_mm2} mm2")
 
 
 def simulate_latency(system, bs, seq_len, name, lock):
@@ -35,14 +34,10 @@ def simulate_latency(system, bs, seq_len, name, lock):
         Tensor([bs, 1, 12288], data_type_dict["fp16"]),
         seq_len,
     )
-    auto_regression_latency_simulated = model_auto_regression.compile_and_simulate(
-        system, "heuristic-GPU"
-    )
+    auto_regression_latency_simulated = model_auto_regression.compile_and_simulate(system, "heuristic-GPU")
     with lock:
         with open(f"ae/figure11/{name}.csv", "a") as f:
-            f.write(
-                f"{bs}, {seq_len}, {auto_regression_latency_simulated}, {model_auto_regression.simluate_log}\n"
-            )
+            f.write(f"{bs}, {seq_len}, {auto_regression_latency_simulated}, {model_auto_regression.simluate_log}\n")
 
 
 lock = Lock()

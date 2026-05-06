@@ -12,8 +12,6 @@ from software_model.gelu import GeLU
 
 from software_model.utils import Tensor, DataType
 from software_model.communication_primitives import AllReduceMultiPCB
-from math import ceil
-from typing import List
 from hardware_model.system import System
 
 
@@ -115,27 +113,12 @@ class TransformerBlockInitComputationTP(Operator):
         device = system.device
         interconnect = system.interconnect
 
-        qkv_latency = 3 * (
-            self.Q_proj.roofline_model(device) + device.compute_module.overhead.matmul
-        )
-        q_mul_k_latency = (
-            self.Q_mul_K.roofline_model(device) + device.compute_module.overhead.matmul
-        )
-        a_mul_v_latency = (
-            self.A_mul_V.roofline_model(device) + device.compute_module.overhead.matmul
-        )
-        h_matmul0_latency = (
-            self.H_matmul0.roofline_model(device)
-            + device.compute_module.overhead.matmul
-        )
-        h1_matmul1_latency = (
-            self.H_matmul1.roofline_model(device)
-            + device.compute_module.overhead.matmul
-        )
-        h2_matmul2_latency = (
-            self.H_matmul2.roofline_model(device)
-            + device.compute_module.overhead.matmul
-        )
+        qkv_latency = 3 * (self.Q_proj.roofline_model(device) + device.compute_module.overhead.matmul)
+        q_mul_k_latency = self.Q_mul_K.roofline_model(device) + device.compute_module.overhead.matmul
+        a_mul_v_latency = self.A_mul_V.roofline_model(device) + device.compute_module.overhead.matmul
+        h_matmul0_latency = self.H_matmul0.roofline_model(device) + device.compute_module.overhead.matmul
+        h1_matmul1_latency = self.H_matmul1.roofline_model(device) + device.compute_module.overhead.matmul
+        h2_matmul2_latency = self.H_matmul2.roofline_model(device) + device.compute_module.overhead.matmul
 
         matmul_total_latency = (
             qkv_latency
@@ -147,21 +130,13 @@ class TransformerBlockInitComputationTP(Operator):
         )
 
         # normalization
-        softmax_latency = (
-            self.A_softmax.roofline_model(device)
-            + device.compute_module.overhead.softmax
-        )
-        layernorm_latency = (
-            self.layer_norm0.roofline_model(device)
-            + device.compute_module.overhead.layernorm
-        )
+        softmax_latency = self.A_softmax.roofline_model(device) + device.compute_module.overhead.softmax
+        layernorm_latency = self.layer_norm0.roofline_model(device) + device.compute_module.overhead.layernorm
 
         normlization_total_latency = softmax_latency + layernorm_latency * 2
 
         # gelu
-        gelu_latency = (
-            self.H_gelu.roofline_model(device) + device.compute_module.overhead.gelu
-        )
+        gelu_latency = self.H_gelu.roofline_model(device) + device.compute_module.overhead.gelu
 
         # allreduce
         if self.device_count > 1:
@@ -180,14 +155,9 @@ class TransformerBlockInitComputationTP(Operator):
         )
         self.roofline_log = f"{qkv_latency}, {q_mul_k_latency}, {a_mul_v_latency}, {h_matmul0_latency}, {h1_matmul1_latency}, {h2_matmul2_latency}, {softmax_latency}, {layernorm_latency}, {layernorm_latency}, {gelu_latency}, {allreduce_latency}, {allreduce_latency}"
         print("total:")
-        print(
-            f"{matmul_total_latency}\n{normlization_total_latency}\n{gelu_latency}\n{allreduce_total_latency}\n"
-        )
+        print(f"{matmul_total_latency}\n{normlization_total_latency}\n{gelu_latency}\n{allreduce_total_latency}\n")
         self.roofline_latency = (
-            matmul_total_latency
-            + normlization_total_latency
-            + gelu_latency
-            + allreduce_total_latency
+            matmul_total_latency + normlization_total_latency + gelu_latency + allreduce_total_latency
         )
         return self.roofline_latency
 
@@ -198,33 +168,27 @@ class TransformerBlockInitComputationTP(Operator):
         # matmul
         print("simulating qkv")
         qkv_latency = 3 * (
-            self.Q_proj.compile_and_simulate(device, compile_mode)
-            + device.compute_module.overhead.matmul
+            self.Q_proj.compile_and_simulate(device, compile_mode) + device.compute_module.overhead.matmul
         )
         print("simulating q_mul_k")
         q_mul_k_latency = (
-            self.Q_mul_K.compile_and_simulate(device, compile_mode)
-            + device.compute_module.overhead.matmul
+            self.Q_mul_K.compile_and_simulate(device, compile_mode) + device.compute_module.overhead.matmul
         )
         print("simulating a_mul_v")
         a_mul_v_latency = (
-            self.A_mul_V.compile_and_simulate(device, compile_mode)
-            + device.compute_module.overhead.matmul
+            self.A_mul_V.compile_and_simulate(device, compile_mode) + device.compute_module.overhead.matmul
         )
         print("simulating h_matmul0")
         h_matmul0_latency = (
-            self.H_matmul0.compile_and_simulate(device, compile_mode)
-            + device.compute_module.overhead.matmul
+            self.H_matmul0.compile_and_simulate(device, compile_mode) + device.compute_module.overhead.matmul
         )
         print("simulating h1_matmul1")
         h1_matmul1_latency = (
-            self.H_matmul1.compile_and_simulate(device, compile_mode)
-            + device.compute_module.overhead.matmul
+            self.H_matmul1.compile_and_simulate(device, compile_mode) + device.compute_module.overhead.matmul
         )
         print("simulating h2_matmul2")
         h2_matmul2_latency = (
-            self.H_matmul2.compile_and_simulate(device, compile_mode)
-            + device.compute_module.overhead.matmul
+            self.H_matmul2.compile_and_simulate(device, compile_mode) + device.compute_module.overhead.matmul
         )
         print("finish matmul simulation")
 
@@ -239,21 +203,16 @@ class TransformerBlockInitComputationTP(Operator):
 
         # normalization
         softmax_latency = (
-            self.A_softmax.compile_and_simulate(device, compile_mode)
-            + device.compute_module.overhead.softmax
+            self.A_softmax.compile_and_simulate(device, compile_mode) + device.compute_module.overhead.softmax
         )
         layernorm_latency = (
-            self.layer_norm0.compile_and_simulate(device, compile_mode)
-            + device.compute_module.overhead.layernorm
+            self.layer_norm0.compile_and_simulate(device, compile_mode) + device.compute_module.overhead.layernorm
         )
 
         normlization_total_latency = softmax_latency + layernorm_latency * 2
 
         # gelu
-        gelu_latency = (
-            self.H_gelu.compile_and_simulate(device, compile_mode)
-            + device.compute_module.overhead.gelu
-        )
+        gelu_latency = self.H_gelu.compile_and_simulate(device, compile_mode) + device.compute_module.overhead.gelu
 
         # allreduce
         if self.device_count > 1:
@@ -274,12 +233,7 @@ class TransformerBlockInitComputationTP(Operator):
         # print(
         #     f"{matmul_total_latency}\n{normlization_total_latency}\n{gelu_latency}\n{allreduce_total_latency}\n"
         # )
-        self.latency = (
-            matmul_total_latency
-            + normlization_total_latency
-            + gelu_latency
-            + allreduce_total_latency
-        )
+        self.latency = matmul_total_latency + normlization_total_latency + gelu_latency + allreduce_total_latency
         self.simluate_log = f"{qkv_latency}, {q_mul_k_latency}, {a_mul_v_latency}, {h_matmul0_latency}, {h1_matmul1_latency}, {h2_matmul2_latency}, {softmax_latency}, {layernorm_latency}, {layernorm_latency}, {gelu_latency}, {allreduce_latency}, {allreduce_latency}"
         return self.latency
 
@@ -317,10 +271,7 @@ class TransformerBlockInitComputationTP(Operator):
         softmax_latency = (
             self.A_softmax.run_on_gpu()  # - self.A_softmax.gpu_kernel_launch_overhead()
         )
-        layernorm_latency = (
-            self.layer_norm0.run_on_gpu()
-            - self.layer_norm0.gpu_kernel_launch_overhead()
-        )
+        layernorm_latency = self.layer_norm0.run_on_gpu() - self.layer_norm0.gpu_kernel_launch_overhead()
 
         normlization_total_latency = softmax_latency + layernorm_latency * 2
 
@@ -340,15 +291,8 @@ class TransformerBlockInitComputationTP(Operator):
             f"{qkv_latency}\n{q_mul_k_latency}\n{a_mul_v_latency}\n{h_matmul0_latency}\n{h1_matmul1_latency}\n{h2_matmul2_latency}\n{softmax_latency}\n{layernorm_latency}\n{layernorm_latency}\n{gelu_latency}\n"
         )
         print("total:")
-        print(
-            f"{matmul_total_latency}\n{normlization_total_latency}\n{gelu_latency}\n{allreduce_total_latency}\n"
-        )
-        self.latency_on_gpu = (
-            matmul_total_latency
-            + normlization_total_latency
-            + gelu_latency
-            + allreduce_total_latency
-        )
+        print(f"{matmul_total_latency}\n{normlization_total_latency}\n{gelu_latency}\n{allreduce_total_latency}\n")
+        self.latency_on_gpu = matmul_total_latency + normlization_total_latency + gelu_latency + allreduce_total_latency
         return self.latency_on_gpu
 
 
@@ -471,27 +415,12 @@ class TransformerBlockAutoRegressionTP(Operator):
         device = system.device
         interconnect = system.interconnect
 
-        qkv_latency = 3 * (
-            self.Q_proj.roofline_model(device) + device.compute_module.overhead.matmul
-        )
-        q_mul_k_latency = (
-            self.Q_mul_K.roofline_model(device) + device.compute_module.overhead.matmul
-        )
-        a_mul_v_latency = (
-            self.A_mul_V.roofline_model(device) + device.compute_module.overhead.matmul
-        )
-        h_matmul0_latency = (
-            self.H_matmul0.roofline_model(device)
-            + device.compute_module.overhead.matmul
-        )
-        h1_matmul1_latency = (
-            self.H_matmul1.roofline_model(device)
-            + device.compute_module.overhead.matmul
-        )
-        h2_matmul2_latency = (
-            self.H_matmul2.roofline_model(device)
-            + device.compute_module.overhead.matmul
-        )
+        qkv_latency = 3 * (self.Q_proj.roofline_model(device) + device.compute_module.overhead.matmul)
+        q_mul_k_latency = self.Q_mul_K.roofline_model(device) + device.compute_module.overhead.matmul
+        a_mul_v_latency = self.A_mul_V.roofline_model(device) + device.compute_module.overhead.matmul
+        h_matmul0_latency = self.H_matmul0.roofline_model(device) + device.compute_module.overhead.matmul
+        h1_matmul1_latency = self.H_matmul1.roofline_model(device) + device.compute_module.overhead.matmul
+        h2_matmul2_latency = self.H_matmul2.roofline_model(device) + device.compute_module.overhead.matmul
 
         matmul_total_latency = (
             qkv_latency
@@ -503,21 +432,13 @@ class TransformerBlockAutoRegressionTP(Operator):
         )
 
         # normalization
-        softmax_latency = (
-            self.A_softmax.roofline_model(device)
-            + device.compute_module.overhead.softmax
-        )
-        layernorm_latency = (
-            self.layer_norm0.roofline_model(device)
-            + device.compute_module.overhead.layernorm
-        )
+        softmax_latency = self.A_softmax.roofline_model(device) + device.compute_module.overhead.softmax
+        layernorm_latency = self.layer_norm0.roofline_model(device) + device.compute_module.overhead.layernorm
 
         normlization_total_latency = softmax_latency + layernorm_latency * 2
 
         # gelu
-        gelu_latency = (
-            self.H_gelu.roofline_model(device) + device.compute_module.overhead.gelu
-        )
+        gelu_latency = self.H_gelu.roofline_model(device) + device.compute_module.overhead.gelu
 
         # allreduce
         if self.device_count > 1:
@@ -535,14 +456,9 @@ class TransformerBlockAutoRegressionTP(Operator):
             f"{qkv_latency}\n{q_mul_k_latency}\n{a_mul_v_latency}\n{h_matmul0_latency}\n{h1_matmul1_latency}\n{h2_matmul2_latency}\n{softmax_latency}\n{layernorm_latency}\n{layernorm_latency}\n{gelu_latency}\n{allreduce_latency}\n{allreduce_latency}\n"
         )
         print("total:")
-        print(
-            f"{matmul_total_latency}\n{normlization_total_latency}\n{gelu_latency}\n{allreduce_total_latency}\n"
-        )
+        print(f"{matmul_total_latency}\n{normlization_total_latency}\n{gelu_latency}\n{allreduce_total_latency}\n")
         self.roofline_latency = (
-            matmul_total_latency
-            + normlization_total_latency
-            + gelu_latency
-            + allreduce_total_latency
+            matmul_total_latency + normlization_total_latency + gelu_latency + allreduce_total_latency
         )
         # print(f'memory requirement: {self.memory_requirement/1e9*96}GB')
         self.roofline_log = f"{qkv_latency}, {q_mul_k_latency}, {a_mul_v_latency}, {h_matmul0_latency}, {h1_matmul1_latency}, {h2_matmul2_latency}, {softmax_latency}, {layernorm_latency}, {layernorm_latency}, {gelu_latency}, {allreduce_latency}, {allreduce_latency}"
@@ -554,35 +470,17 @@ class TransformerBlockAutoRegressionTP(Operator):
 
         # matmul
         # print("simulating qkv")
-        qkv_latency = 3 * (
-            self.Q_proj.compile_and_simulate(pcb, compile_mode)
-            + pcb.compute_module.overhead.matmul
-        )
+        qkv_latency = 3 * (self.Q_proj.compile_and_simulate(pcb, compile_mode) + pcb.compute_module.overhead.matmul)
         # print("simulating q_mul_k")
-        q_mul_k_latency = (
-            self.Q_mul_K.compile_and_simulate(pcb, compile_mode)
-            + pcb.compute_module.overhead.matmul
-        )
+        q_mul_k_latency = self.Q_mul_K.compile_and_simulate(pcb, compile_mode) + pcb.compute_module.overhead.matmul
         # print("simulating a_mul_v")
-        a_mul_v_latency = (
-            self.A_mul_V.compile_and_simulate(pcb, compile_mode)
-            + pcb.compute_module.overhead.matmul
-        )
+        a_mul_v_latency = self.A_mul_V.compile_and_simulate(pcb, compile_mode) + pcb.compute_module.overhead.matmul
         # print("simulating h_matmul0")
-        h_matmul0_latency = (
-            self.H_matmul0.compile_and_simulate(pcb, compile_mode)
-            + pcb.compute_module.overhead.matmul
-        )
+        h_matmul0_latency = self.H_matmul0.compile_and_simulate(pcb, compile_mode) + pcb.compute_module.overhead.matmul
         # print("simulating h1_matmul1")
-        h1_matmul1_latency = (
-            self.H_matmul1.compile_and_simulate(pcb, compile_mode)
-            + pcb.compute_module.overhead.matmul
-        )
+        h1_matmul1_latency = self.H_matmul1.compile_and_simulate(pcb, compile_mode) + pcb.compute_module.overhead.matmul
         # print("simulating h2_matmul2")
-        h2_matmul2_latency = (
-            self.H_matmul2.compile_and_simulate(pcb, compile_mode)
-            + pcb.compute_module.overhead.matmul
-        )
+        h2_matmul2_latency = self.H_matmul2.compile_and_simulate(pcb, compile_mode) + pcb.compute_module.overhead.matmul
 
         matmul_total_latency = (
             qkv_latency
@@ -594,22 +492,15 @@ class TransformerBlockAutoRegressionTP(Operator):
         )
 
         # normalization
-        softmax_latency = (
-            self.A_softmax.compile_and_simulate(pcb, compile_mode)
-            + pcb.compute_module.overhead.softmax
-        )
+        softmax_latency = self.A_softmax.compile_and_simulate(pcb, compile_mode) + pcb.compute_module.overhead.softmax
         layernorm_latency = (
-            self.layer_norm0.compile_and_simulate(pcb, compile_mode)
-            + pcb.compute_module.overhead.layernorm
+            self.layer_norm0.compile_and_simulate(pcb, compile_mode) + pcb.compute_module.overhead.layernorm
         )
 
         normlization_total_latency = softmax_latency + layernorm_latency * 2
 
         # gelu
-        gelu_latency = (
-            self.H_gelu.compile_and_simulate(pcb, compile_mode)
-            + pcb.compute_module.overhead.gelu
-        )
+        gelu_latency = self.H_gelu.compile_and_simulate(pcb, compile_mode) + pcb.compute_module.overhead.gelu
 
         # allreduce
         if self.device_count > 1:
@@ -630,12 +521,7 @@ class TransformerBlockAutoRegressionTP(Operator):
         # print(
         #     f"{matmul_total_latency}\n{normlization_total_latency}\n{gelu_latency}\n{allreduce_total_latency}\n"
         # )
-        self.latency = (
-            matmul_total_latency
-            + normlization_total_latency
-            + gelu_latency
-            + allreduce_total_latency
-        )
+        self.latency = matmul_total_latency + normlization_total_latency + gelu_latency + allreduce_total_latency
         self.simluate_log = f"{qkv_latency}, {q_mul_k_latency}, {a_mul_v_latency}, {h_matmul0_latency}, {h1_matmul1_latency}, {h2_matmul2_latency}, {softmax_latency}, {layernorm_latency}, {layernorm_latency}, {gelu_latency}, {allreduce_latency}, {allreduce_latency}"
         return self.latency
 
@@ -673,10 +559,7 @@ class TransformerBlockAutoRegressionTP(Operator):
         softmax_latency = (
             self.A_softmax.run_on_gpu()  # - self.A_softmax.gpu_kernel_launch_overhead()
         )
-        layernorm_latency = (
-            self.layer_norm0.run_on_gpu()
-            - self.layer_norm0.gpu_kernel_launch_overhead()
-        )
+        layernorm_latency = self.layer_norm0.run_on_gpu() - self.layer_norm0.gpu_kernel_launch_overhead()
 
         normlization_total_latency = softmax_latency + layernorm_latency * 2
 
@@ -697,15 +580,8 @@ class TransformerBlockAutoRegressionTP(Operator):
             f"{qkv_latency}\n{q_mul_k_latency}\n{a_mul_v_latency}\n{h_matmul0_latency}\n{h1_matmul1_latency}\n{h2_matmul2_latency}\n{softmax_latency}\n{layernorm_latency}\n{layernorm_latency}\n{gelu_latency}\n"
         )
         print("total:")
-        print(
-            f"{matmul_total_latency}\n{normlization_total_latency}\n{gelu_latency}\n{allreduce_total_latency}\n"
-        )
-        self.latency_on_gpu = (
-            matmul_total_latency
-            + normlization_total_latency
-            + gelu_latency
-            + allreduce_total_latency
-        )
+        print(f"{matmul_total_latency}\n{normlization_total_latency}\n{gelu_latency}\n{allreduce_total_latency}\n")
+        self.latency_on_gpu = matmul_total_latency + normlization_total_latency + gelu_latency + allreduce_total_latency
         return self.latency_on_gpu
 
 

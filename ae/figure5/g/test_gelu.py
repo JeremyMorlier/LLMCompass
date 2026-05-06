@@ -20,7 +20,7 @@ if __name__ == "__main__":
     if args.gpu:
         gpu_kernel_launch_overhead = GeLU.gpu_kernel_launch_overhead()
 
-    print(f"Performance of GELU")
+    print("Performance of GELU")
     for M in range(10, 30):
         M = 2**M
         # N = 2**15
@@ -31,12 +31,7 @@ if __name__ == "__main__":
                 latency = model.roofline_model(TPU) + 100e-6
                 file_name = "gelu_TPUv3_roofline.csv"
             else:
-                latency = (
-                    model.compile_and_simulate(
-                        pcb_module=TPU, compile_mode="heuristic-TPU"
-                    )
-                    + 100e-6
-                )
+                latency = model.compile_and_simulate(pcb_module=TPU, compile_mode="heuristic-TPU") + 100e-6
                 file_name = "gelu_TPUv3_sim.csv"
         else:
             model = GeLU(data_type=data_type_dict["fp16"])
@@ -53,27 +48,18 @@ if __name__ == "__main__":
                     latency = model.roofline_model(A100) + 4.5e-5
                     file_name = "gelu_A100_roofline.csv"
                 else:
-                    latency = (
-                        model.compile_and_simulate(
-                            pcb_module=A100, compile_mode="heuristic-GPU"
-                        )
-                        + 4.5e-5
-                    )
+                    latency = model.compile_and_simulate(pcb_module=A100, compile_mode="heuristic-GPU") + 4.5e-5
                     file_name = "gelu_A100_sim.csv"
             if args.simamd:
                 if args.roofline:
-                    latency = (
-                        model.roofline_model(MI210) + MI210.compute_module.overhead.gelu
-                    )
+                    latency = model.roofline_model(MI210) + MI210.compute_module.overhead.gelu
                     file_name = "gelu_MI210_roofline.csv"
                 else:
                     latency = (
-                        model.compile_and_simulate(
-                            pcb_module=MI210, compile_mode="heuristic-GPU"
-                        )
+                        model.compile_and_simulate(pcb_module=MI210, compile_mode="heuristic-GPU")
                         + MI210.compute_module.overhead.gelu
                     )
                     file_name = "gelu_MI210_sim.csv"
-        print(f"{M}, {M/latency/1e9}")
+        print(f"{M}, {M / latency / 1e9}")
         with open(f"ae/figure5/g/{file_name}", "a") as f:
-            f.write(f"{M}, {M/latency/1e9}\n")
+            f.write(f"{M}, {M / latency / 1e9}\n")

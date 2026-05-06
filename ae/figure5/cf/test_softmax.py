@@ -22,7 +22,7 @@ if __name__ == "__main__":
     if args.gpu:
         gpu_kernel_launch_overhead = Softmax.gpu_kernel_launch_overhead()
 
-    print(f"Performance of Softmax")
+    print("Performance of Softmax")
     M = 2**12
     for N in range(5, 16):
         N = 2**N
@@ -56,14 +56,12 @@ if __name__ == "__main__":
                     latency = model.roofline_model(pcb_module=MI210) + amd_overhead
                     file_name = "softmax_MI210_roofline.csv"
                 else:
-                    latency = (
-                        model.compile_and_simulate(pcb_module=MI210) + amd_overhead
-                    )
+                    latency = model.compile_and_simulate(pcb_module=MI210) + amd_overhead
                     file_name = "softmax_MI210_sim.csv"
 
-        print(f"{M}, {N}, {M*N/latency/1e9}")
+        print(f"{M}, {N}, {M * N / latency / 1e9}")
         with open(f"ae/figure5/cf/{file_name}", "a") as f:
-            f.write(f"{M}, {N}, {M*N/latency/1e9}\n")
+            f.write(f"{M}, {N}, {M * N / latency / 1e9}\n")
 
     N = 2**12
     for M in range(5, 16):
@@ -93,9 +91,7 @@ if __name__ == "__main__":
                 if args.roofline:
                     latency = model.roofline_model(pcb_module=MI210) + amd_overhead
                 else:
-                    latency = (
-                        model.compile_and_simulate(pcb_module=MI210) + amd_overhead
-                    )
-        print(f"{M}, {N}, {M*N/latency/1e9}")
+                    latency = model.compile_and_simulate(pcb_module=MI210) + amd_overhead
+        print(f"{M}, {N}, {M * N / latency / 1e9}")
         with open(f"ae/figure5/cf/{file_name}", "a") as f:
-            f.write(f"{M}, {N}, {M*N/latency/1e9}\n")
+            f.write(f"{M}, {N}, {M * N / latency / 1e9}\n")

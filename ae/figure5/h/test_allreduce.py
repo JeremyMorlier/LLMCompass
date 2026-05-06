@@ -1,7 +1,6 @@
 from software_model.communication_primitives import AllReduceMultiPCB
 from software_model.utils import data_type_dict, Tensor
 from hardware_model.interconnect import interconnect_module_dict
-import pandas as pd
 import matplotlib.pyplot as plt
 import seaborn as sns
 import numpy as np
@@ -87,9 +86,7 @@ if __name__ == "__main__":
         simulated_latency_list.append(our_latency * 1e6)
 
     gpu_bandwidth_list = np.array(size_list) / np.array(gpu_latency_list) / 1e3
-    simulated_gpu_bandwidth_list = (
-        np.array(size_list) / np.array(simulated_latency_list) / 1e3
-    )
+    simulated_gpu_bandwidth_list = np.array(size_list) / np.array(simulated_latency_list) / 1e3
 
     size_list = size_list[9:]
     gpu_bandwidth_list = gpu_bandwidth_list[9:]
@@ -126,7 +123,6 @@ if __name__ == "__main__":
         our_latency = model.simulate(interconnect_module=interconnect_module)
         simulated_tpu_bandwidth_list.append(data_size / our_latency / 1e9)
 
-    
     plt.plot(
         size_list,
         simulated_tpu_bandwidth_list,
@@ -136,10 +132,6 @@ if __name__ == "__main__":
     )
     plt.xlabel("Data Size (Bytes)")
     plt.ylabel("Bandwidth (GB/s)")
-    plt.grid(
-        True, which="both", ls="--", c="0.7"
-    )  # Adding a grid for better readability
+    plt.grid(True, which="both", ls="--", c="0.7")  # Adding a grid for better readability
     plt.legend()
-    plt.savefig(
-        "ae/figure5/h/figure5h.pdf", bbox_inches="tight", pad_inches=0.01, dpi=300
-    )
+    plt.savefig("ae/figure5/h/figure5h.pdf", bbox_inches="tight", pad_inches=0.01, dpi=300)

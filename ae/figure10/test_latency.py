@@ -18,18 +18,18 @@ our_compute_area_mm2 = calc_compute_chiplet_area_mm2(our_specs)
 our_io_area_mm2 = calc_io_die_area_mm2(our_specs)
 print(f"A100 compute area: {A100_compute_area_mm2} mm2")
 print(f"A100 IO area: {A100_io_area_mm2} mm2")
-print(f"A100 total area: {A100_compute_area_mm2+A100_io_area_mm2} mm2")
+print(f"A100 total area: {A100_compute_area_mm2 + A100_io_area_mm2} mm2")
 print(f"Our compute area: {our_compute_area_mm2} mm2")
 print(f"Our IO area: {our_io_area_mm2} mm2")
-print(f"Our total area: {our_compute_area_mm2+our_io_area_mm2} mm2")
+print(f"Our total area: {our_compute_area_mm2 + our_io_area_mm2} mm2")
 
 with open("ae/figure10/area.csv", "w") as f:
     f.write(f"A100 compute area: {A100_compute_area_mm2} mm2\n")
     f.write(f"A100 IO area: {A100_io_area_mm2} mm2\n")
-    f.write(f"A100 total area: {A100_compute_area_mm2+A100_io_area_mm2} mm2\n")
+    f.write(f"A100 total area: {A100_compute_area_mm2 + A100_io_area_mm2} mm2\n")
     f.write(f"Our compute area: {our_compute_area_mm2} mm2\n")
     f.write(f"Our IO area: {our_io_area_mm2} mm2\n")
-    f.write(f"Our total area: {our_compute_area_mm2+our_io_area_mm2} mm2\n")
+    f.write(f"Our total area: {our_compute_area_mm2 + our_io_area_mm2} mm2\n")
 
 
 def simulate_decoding_latency(system, bs, seq_len, name, lock):
@@ -43,9 +43,7 @@ def simulate_decoding_latency(system, bs, seq_len, name, lock):
         Tensor([bs, 1, 12288], data_type_dict["fp16"]),
         seq_len,
     )
-    auto_regression_latency_simulated = model_auto_regression.compile_and_simulate(
-        system, "heuristic-GPU"
-    )
+    auto_regression_latency_simulated = model_auto_regression.compile_and_simulate(system, "heuristic-GPU")
     with lock:
         with open(f"ae/figure10/{name}_decoding.csv", "a") as f:
             f.write(f"{bs}, {seq_len}, {auto_regression_latency_simulated}\n")
@@ -82,9 +80,7 @@ for bs in [16]:  # [1, 4, 8, 16, 32, 64]:
             else:
                 name = "our"
                 lock = lock_our_prefill
-            p = Process(
-                target=simulate_prefill_latency, args=(system, bs, seq_len, name, lock)
-            )
+            p = Process(target=simulate_prefill_latency, args=(system, bs, seq_len, name, lock))
             processes.append(p)
     for seq_len in range(256, 4096 + 64, 64):
         for system in [our_system, A100_system]:
@@ -94,9 +90,7 @@ for bs in [16]:  # [1, 4, 8, 16, 32, 64]:
             else:
                 name = "our"
                 lock = lock_our_decoding
-            p = Process(
-                target=simulate_decoding_latency, args=(system, bs, seq_len, name, lock)
-            )
+            p = Process(target=simulate_decoding_latency, args=(system, bs, seq_len, name, lock))
             processes.append(p)
 
 
