@@ -1428,8 +1428,23 @@ class Matmul(Operator):
                     f.writelines("Dataflow : " + dataflow + "\n")
                     f.writelines("Bandwidth : " + "100" + "\n")
                     f.writelines("MemoryBanks: 1\n\n")
+                    f.writelines("ReadRequestBuffer: 64\n")
+                    f.writelines("WriteRequestBuffer: 64\n\n")
                     f.writelines("[run_presets]\n")
                     f.writelines("InterfaceBandwidth: CALC\n")
+                    # Required by newer ScaleSim versions.
+                    f.writelines("UseRamulatorTrace: False\n")
+                    f.writelines("\n[layout]\n")
+                    f.writelines("IfmapCustomLayout: False\n")
+                    f.writelines("FilterCustomLayout: False\n")
+                    f.writelines("IfmapSRAMBankBandwidth: 32\n")
+                    f.writelines("IfmapSRAMBankNum: 1\n")
+                    f.writelines("IfmapSRAMBankPort: 1\n")
+                    f.writelines("FilterSRAMBankBandwidth: 32\n")
+                    f.writelines("FilterSRAMBankNum: 1\n")
+                    f.writelines("FilterSRAMBankPort: 1\n")
+                    f.writelines("\n[sparsity]\n")
+                    f.writelines("SparsitySupport: False\n")
 
                 topology = f"./systolic_array_model/temp/matmul_{os.getpid()}.csv"
                 with open(topology, "w") as f:
